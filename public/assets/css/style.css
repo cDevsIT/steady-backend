@@ -1,0 +1,836 @@
+.base-bg, .btn-next {
+    background-color: #FF5700;
+    color: #fff;
+}
+
+.btn-next, .btn-next:hover {
+    border-radius: 100px;
+    padding: 3px 16px;
+    color: #fff;
+}
+
+.base-font {
+    color: #FF5700;
+}
+
+.btn-right-radius {
+    border-bottom-right-radius: 20px;
+    border-top-right-radius: 20px;
+}
+select#business_type.is-invalid {
+    border-top: 1px solid red;
+}
+.form-control:active {
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+.btn:active, .btn:focus {
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+/*    Hero*/
+.hero-review {
+    padding: 6px 20px;
+    background-color: #fff;
+    border-style: none;
+    border-radius: 100px;
+    box-shadow: 0px 0px 5px 2px rgba(148, 148, 255, .29);
+    font-size: 16px;
+}
+
+.header {
+    width: 100%;
+    background-color: #FF5700;
+    color: #fff;
+}
+
+.logo-img {
+    width: 200px;
+}
+
+.navitem {
+    font-width: 700;
+    color: #000000;
+}
+
+.btn-first {
+    background-color: #FF5700;
+    color: #fff;
+}
+
+.btn-first:hover {
+    background-color: black;
+    color: #fff;
+}
+
+a {
+    text-decoration: none;
+}
+
+/*Login*/
+
+img.login-img {
+    width: 400px;
+}
+
+.login-title {
+    font-size: 26px;
+    font-weight: 700;
+    margin: 31px 0px;
+}
+
+.card.shadow.login-container {
+    padding: 50px;
+    border-radius: 20px;
+}
+
+/*.fixed-top {*/
+/*    margin-top: 0px !important;*/
+/*    background: #ffffff4a;*/
+/*    border-radius: 0 0 5px 5px;*/
+/*    box-shadow: 0px 2px 5px 2px #00000017;*/
+/*    backdrop-filter: blur(5px);*/
+/*}*/
+
+.headline {
+    font-size: 54px;
+    font-weight: 700;
+}
+.top_header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-direction: row;
+}
+
+#navbar_sticky {
+    position: sticky;
+    top: 0;
+    margin-top: 0px !important;
+    background: #ffffff4a;
+    border-radius: 0 0 5px 5px;
+    box-shadow: 0px 2px 5px 2px #00000017;
+    backdrop-filter: blur(5px);
+    z-index: 9999;
+}
+
+.step_caption {
+    font-weight: 600;
+    color: #000000;
+}
+
+.step_group {
+    margin-bottom: 20px;
+}
+
+label.step_label {
+    margin-bottom: 12px;
+}
+
+.step_form_control {
+    background-color: #F6F6F6;
+    padding: 6px 10px;
+    border-radius: 20px;
+    /*border: 1px solid #F6F6F6 !important;*/
+    border: 1px solid gray !important;
+    width: 100%;
+}
+
+.step_form_control:focus, .step_form_control:active {
+    outline: none !important;
+    background: #F6F6F6;
+    /*border: 1px solid #F6F6F6 !important;*/
+    border: 1px solid gray !important;
+    box-shadow: none;
+}
+
+
+.owners_info {
+    border: 1px solid #000000;
+    border-radius: 20px;
+    padding: 10px 5px;
+}
+
+select:focus {
+    border: none;
+    outline: none;
+}
+
+.step_input_group_text {
+    padding: 0;
+    border: 0;
+    background: #F6F6F6;
+    border-width: 1px 1px 1px 0;
+    border-style: solid;
+    border-color: #F6F6F6;
+    border-bottom-right-radius: 20px;
+    border-top-right-radius: 20px;
+}
+
+/*#business_type {*/
+/*    border: none;*/
+/*    background: #F6F6F6*/
+/*}*/
+#business_type {
+    border: none;
+    border-bottom-left-radius: 0px;
+    border-top-left-radius: 0px;
+    background: #F6F6F6;
+    height: 44px;
+}
+
+/*.right-sidebar{*/
+/*    position: -webkit-sticky;*/
+/*    position: sticky;*/
+/*    margin-top: 14px;*/
+/*    width: 100% !important;*/
+/*    background: #F6F6F6;*/
+/*    padding: 10px 0px;*/
+/*}*/
+
+.right-sidebar {
+    position: -webkit-sticky; /* For Safari */
+    position: sticky;
+    top: 20%; /* Adjust this value based on your header height or other fixed elements */
+    padding: 10px 0px; /* Optional: add some padding at the top */
+    max-height: 100vh; /* Optional: ensure it doesn't exceed the viewport height */
+    overflow-y: auto; /* Optional: add scroll within the sidebar if content overflows */
+    background-color: #F6F6F6; /* Optional: add a background color for better visibility */
+    z-index: 1000; /* Ensure it stays above other content */
+    margin-top: 14px;
+}
+
+.total_order_amount {
+    padding: 5px 0px;
+    color: #FFFFFF;
+    background: #FF5700;
+    margin: 15px 0px;
+}
+
+
+.business_details_items.mb-4 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+}
+
+
+.reg_agent_area {
+    background-color: #ff57000f;
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 10px;
+}
+
+.business_address_area {
+    background-color: #00ff3812;
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 10px;
+}
+
+
+/*==================================== Pricing =================*/
+.card-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    justify-content: center;
+    gap: 20px;
+}
+
+.card_item {
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    width: 280px;
+    padding: 20px;
+    background-color: #fff;
+    text-align: left;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    position: relative;
+    transition: transform 0.3s ease;
+}
+
+.card_item:hover {
+    transform: translateY(-10px);
+}
+
+.card_item input[type="radio"] {
+    display: none;
+}
+
+p.tagline {
+    width: 152px;
+    margin-left: 24px;
+}
+
+.card-content {
+    border: 2px solid transparent;
+    border-radius: 10px;
+    padding: 15px;
+    transition: border-color 0.3s ease;
+}
+
+.card_item .price {
+    font-size: 24px;
+    margin: 20px 0;
+    color: #f60;
+}
+
+.card_item .features {
+    list-style: none;
+    padding: 0;
+}
+
+.card_item .features li {
+    margin: 10px 0;
+    color: #666;
+}
+
+.card_item label {
+    display: block;
+    cursor: pointer;
+}
+
+.card_item .radio-circle {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #f60;
+    border-radius: 50%;
+    position: absolute;
+    top: 86px;
+    left: 32px;
+    background-color: #fff;
+}
+
+.card_item input[type="radio"]:checked + .card-content .radio-circle {
+    background-color: #f60;
+}
+
+.card_item input[type="radio"]:checked + .card-content .radio-circle::after {
+    content: '';
+    width: 10px;
+    height: 10px;
+    background-color: #fff;
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.card_item .features li {
+    position: relative; /* Establish a positioning context */
+    padding-left: 1.2em; /* Space for the custom bullet */
+    margin-bottom: 26px !important;
+}
+
+.card_item .features li::before {
+    content: ''; /* Insert an empty content */
+    position: absolute; /* Position it absolutely within the li */
+    left: 0; /* Position it at the start of the li */
+    top: 8px; /* Adjust as needed to vertically center the bullet */
+    width: 0.6em; /* Size of the bullet */
+    height: 0.6em; /* Size of the bullet */
+    background-color: #ff0000; /* Change this to your desired color */
+    border-radius: 50%; /* Make it a circle */
+}
+
+
+.card_item .radio-button {
+    width: 100%;
+    height: 50px;
+    background-color: #F3F3F3;
+    border-radius: 0 0 10px 10px;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.card_item .radio-button::before {
+    content: '';
+    width: 20px;
+    height: 20px;
+    background-color: #fff;
+    border-radius: 50%;
+}
+
+.card_item input[type="radio"]:checked + label .radio-button::before {
+    background-color: #f60;
+    content: '';
+    width: 20px;
+    height: 20px;
+    border: 2px solid #fff;
+    border-radius: 50%;
+}
+
+.card_item input[type="radio"]:checked + label .radio-button {
+    background-color: #f60;
+}
+
+
+/*Step 4*/
+#free_plan_details {
+    margin-top: 25px;
+    padding: 20px;
+    background: #dbff0003;
+}
+
+/*Step 5*/
+
+.step_5_note {
+    background: #FEFFF1;
+    margin-top: 15px;
+    padding: 10px;
+}
+
+.radio-option {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.radio-input {
+    display: none; /* Hide the default radio button */
+}
+
+.radio-label {
+    position: relative;
+    padding-left: 35px;
+    cursor: pointer;
+    color: #333;
+}
+
+.radio-label:before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 4px solid #ccc;
+    background-color: #fff;
+}
+
+.radio-input:checked + .radio-label:before {
+    border-color: #FF5700; /* Change the border color when the radio is checked */
+    /*background-color: orange; !* Change the background color when the radio is checked *!*/
+}
+
+/*Step seven*/
+.processing_card-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    justify-content: center;
+    gap: 20px;
+}
+
+.processing_card_item {
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    width: 100%;
+    background-color: #fff;
+    text-align: left;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    position: relative;
+    transition: transform 0.3s ease;
+}
+
+.processing_card_item:hover {
+    transform: translateY(-10px);
+}
+
+.processing_card_item input[type="radio"] {
+    display: none;
+}
+
+.card-content {
+    border: 2px solid transparent;
+    border-radius: 10px;
+    padding: 15px;
+    transition: border-color 0.3s ease;
+}
+
+.processing_card_item .price {
+    font-size: 24px;
+    margin: 20px 0;
+    color: #f60;
+}
+
+.processing_card_item .features {
+    list-style: none;
+    padding: 0;
+}
+
+.processing_card_item .features li {
+    margin: 10px 0;
+    color: #666;
+}
+
+.processing_card_item.active {
+    background: #ff570014;
+}
+
+.processing_card_item label {
+    display: block;
+    cursor: pointer;
+    margin-left: 30px;
+}
+
+.processing_card_item .radio-circle {
+    width: 25px;
+    height: 25px;
+    border: 4px solid #d7cfca;
+    border-radius: 50%;
+    position: absolute;
+    top: 24px;
+    left: 15px;
+    background-color: #fff;
+}
+
+.processing_card_item input[type="radio"]:checked + .card-content .radio-circle {
+    background-color: #f60;
+}
+
+.processing_card_item input[type="radio"]:checked + .card-content .radio-circle::after {
+    content: '';
+    width: 25px;
+    height: 25px;
+    background-color: #fff;
+    border: 4px solid #ff5700;
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.processing_card_item .features li {
+    position: relative; /* Establish a positioning context */
+    padding-left: 1.2em; /* Space for the custom bullet */
+    margin-bottom: 26px !important;
+}
+
+.processing_card_item .features li::before {
+    content: ''; /* Insert an empty content */
+    position: absolute; /* Position it absolutely within the li */
+    left: 0; /* Position it at the start of the li */
+    top: 8px; /* Adjust as needed to vertically center the bullet */
+    width: 0.6em; /* Size of the bullet */
+    height: 0.6em; /* Size of the bullet */
+    background-color: #ff0000; /* Change this to your desired color */
+    border-radius: 50%; /* Make it a circle */
+}
+
+
+.processing_card_item .radio-button {
+    width: 100%;
+    height: 50px;
+    background-color: #F3F3F3;
+    border-radius: 0 0 10px 10px;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.processing_card_item .radio-button::before {
+    content: '';
+    width: 20px;
+    height: 20px;
+    background-color: #fff;
+    border-radius: 50%;
+}
+
+.processing_card_item input[type="radio"]:checked + label .radio-button::before {
+    background-color: #f60;
+    content: '';
+    width: 20px;
+    height: 20px;
+    border: 2px solid #fff;
+    border-radius: 50%;
+}
+
+.processing_card_item input[type="radio"]:checked + label .radio-button {
+    background-color: #f60;
+}
+
+
+/*Step 7*/
+.service-list {
+    border: 0.2px solid #000000;
+    border-radius: 15px;
+    padding: 20px;
+}
+
+.service-list .service-item {
+    border-bottom: 0.01px solid #E7E7E7;
+    padding: 5px 0px;
+    margin: 18px 0px;
+}
+
+.service-list .service-item h3 {
+    font-size: 26px;
+}
+
+.service-item .item-content {
+    display: flex;
+    justify-content: flex-start;
+    gap: 11px;
+    align-items: center;
+}
+
+.service-item .service-description {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.item_price {
+    color: #FF5700;
+}
+
+
+/*Payment Getways*/
+.form-row {
+    margin-bottom: 20px;
+}
+
+.form-row label {
+    display: block;
+    margin-bottom: 10px;
+}
+
+.form-row #card-errors {
+    color: red;
+}
+
+div#stripe {
+    width: 50%;
+    margin: 0 auto;
+    margin-top: 87px;
+    margin-bottom: 20px;
+}
+
+.pay_item {
+    margin-top: 30px;
+}
+
+span.amount {
+    font-size: 26px;
+    color: #ff5700;
+    font-weight: 700;
+}
+
+/*Hide All*/
+/**{*/
+/*    background-color: gray !important;*/
+/*    color: gray !important;*/
+/*}*/
+/*img{*/
+/*    display: none;*/
+/*}*/
+/*svg{*/
+/*    display: none;*/
+/*}*/
+.footer_items {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+}
+
+footer.footer {
+    padding: 30px;
+}
+
+img.footer_logo {
+    width: 300px;
+}
+.footer_item ul {
+    padding-left: 0px !important;
+}
+.footer_item li {
+    list-style: none;
+    line-height: 32px;
+}
+
+.footer_item li a {
+    color: black;
+}
+
+.footer_item i {
+    color: black;
+}
+
+.social_icons {
+    display: flex;
+    gap: 10px;
+}
+
+.social_item {
+    width: 45px;
+    height: 45px;
+    background: #FF5700;
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.social_item i {
+    color: #fff;
+    font-size: 25px;
+}
+
+.article_x.wantHide {
+    padding: 30px;
+}
+
+/*Blog*/
+.blogs_items {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+    justify-content: center;
+    align-items: stretch;
+    align-content: center;
+    padding: 30px;
+
+}
+h4.blog_title a {
+    color: black;
+}
+h4.blog_title:hover a {
+    color: #ff5700;
+}
+.blog_item_card {
+    position: relative;
+    box-shadow: 0 0 10px 0 rgba(0, 0, 0, .15);
+    height: 100%;
+}
+
+.blog_item_card:hover {
+    box-shadow: 0 0 30px 0 rgba(0, 0, 0, .15);
+}
+
+.image img {
+    width: 100%;
+    border-radius: 20px;
+}
+
+.blog_title {
+    font-weight: 700;
+}
+
+.blog_category {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    background: #ff5700;
+    padding: 5px 15px;
+    color: #fff;
+    border-radius: 30px;
+}
+
+.blog_card_footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: transparent !important;
+    font-size: 12px !important;
+    color: #3d3d3d !important;
+    padding: 15px 10px;
+}
+
+@media (max-width: 1200px) {
+
+}
+
+@media (max-width: 900px) {
+    .ar_items {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+    }
+
+    .showCounter {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
+    }
+
+    .article {
+        padding: 20px 0px !important;
+    }
+
+    .ar_item {
+        display: block;
+        align-items: start;
+        justify-content: left;
+        padding: 20px;
+    }
+
+    .ec_items, .dc_items {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    .hc_items, .gc_items, .fc_items {
+        grid-template-columns: 1fr !important;
+    }
+
+    .article_i.wantHide {
+        padding: 20px;
+    }
+
+    .ic_items {
+        padding: 0px !important;
+    }
+
+    .footer_items {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        text-align: center;
+    }
+
+    .social_icons {
+        justify-content: center;
+    }
+
+    .blogs_items {
+        grid-template-columns: 1fr;
+        gap: 10px;
+
+    }
+    .container{
+        max-width: 100% !important;
+    }
+
+}
+
+@media (max-width: 600px) {
+    .bc_item {
+        padding: 20px;
+    }
+
+    .ec_items, .dc_items  {
+        grid-template-columns: 1fr  !important;
+
+    }
+
+    .footer_items {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        text-align: center;
+    }
+
+    .social_icons {
+        justify-content: center;
+    }
+
+}

@@ -1,0 +1,30 @@
+[13-Jun-2024 12:23:05 UTC] PHP Warning:  require(/home/busines5/funnel.steadyformation.com/public/../vendor/autoload.php): Failed to open stream: No such file or directory in /home/busines5/funnel.steadyformation.com/public/index.php on line 34
+[13-Jun-2024 12:23:05 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/busines5/funnel.steadyformation.com/public/../vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php81/root/usr/share/pear') in /home/busines5/funnel.steadyformation.com/public/index.php:34
+Stack trace:
+#0 {main}
+  thrown in /home/busines5/funnel.steadyformation.com/public/index.php on line 34
+[13-Jun-2024 12:23:10 UTC] PHP Warning:  require(/home/busines5/funnel.steadyformation.com/public/../vendor/autoload.php): Failed to open stream: No such file or directory in /home/busines5/funnel.steadyformation.com/public/index.php on line 34
+[13-Jun-2024 12:23:10 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/busines5/funnel.steadyformation.com/public/../vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php81/root/usr/share/pear') in /home/busines5/funnel.steadyformation.com/public/index.php:34
+Stack trace:
+#0 {main}
+  thrown in /home/busines5/funnel.steadyformation.com/public/index.php on line 34
+[13-Jun-2024 12:23:12 UTC] PHP Warning:  require(/home/busines5/funnel.steadyformation.com/public/../vendor/autoload.php): Failed to open stream: No such file or directory in /home/busines5/funnel.steadyformation.com/public/index.php on line 34
+[13-Jun-2024 12:23:12 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/busines5/funnel.steadyformation.com/public/../vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php81/root/usr/share/pear') in /home/busines5/funnel.steadyformation.com/public/index.php:34
+Stack trace:
+#0 {main}
+  thrown in /home/busines5/funnel.steadyformation.com/public/index.php on line 34
+[13-Jun-2024 12:23:16 UTC] PHP Warning:  require(/home/busines5/funnel.steadyformation.com/public/../vendor/autoload.php): Failed to open stream: No such file or directory in /home/busines5/funnel.steadyformation.com/public/index.php on line 34
+[13-Jun-2024 12:23:16 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/busines5/funnel.steadyformation.com/public/../vendor/autoload.php' (include_path='.:/opt/cpanel/ea-php81/root/usr/share/pear') in /home/busines5/funnel.steadyformation.com/public/index.php:34
+Stack trace:
+#0 {main}
+  thrown in /home/busines5/funnel.steadyformation.com/public/index.php on line 34
+[27-Jun-2024 13:18:16 UTC] PHP Fatal error:  Cannot use Illuminate\Support\Facades\Mail as Mail because the name is already in use in /home/busines5/funnel.steadyformation.com/app/Http/Controllers/DeveloperTestController.php on line 15
+[19-Sep-2024 13:42:14 UTC] Stripe Notice: Undefined property of Stripe\PaymentIntent instance: receipt_url
+[22-Sep-2024 17:49:56 UTC] Stripe Notice: Undefined property of Stripe\PaymentIntent instance: receipt_url
+[23-Sep-2024 08:00:15 UTC] Stripe Notice: Undefined property of Stripe\PaymentIntent instance: receipt_url
+[23-Sep-2024 14:33:50 UTC] Stripe Notice: Undefined property of Stripe\PaymentIntent instance: receipt_url
+[29-Sep-2024 06:40:32 UTC] Stripe Notice: Undefined property of Stripe\PaymentIntent instance: receipt_url
+[01-Oct-2024 11:16:20 UTC] Stripe Notice: Undefined property of Stripe\PaymentIntent instance: receipt_url
+[01-Oct-2024 11:53:31 UTC] Stripe Notice: Undefined property of Stripe\PaymentIntent instance: receipt_url
+[01-Oct-2024 11:58:45 UTC] Stripe Notice: Undefined property of Stripe\PaymentIntent instance: receipt_url
+[05-Oct-2024 07:13:36 UTC] Stripe Notice: Undefined property of Stripe\PaymentIntent instance: receipt_url
