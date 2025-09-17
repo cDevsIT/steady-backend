@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\StateFeeController;
 use App\Http\Controllers\Api\CompanyStatusController;
 use App\Http\Controllers\Api\DocumentsController;
 use App\Http\Controllers\Api\TicketsController;
+use App\Http\Controllers\Api\TransitionsController as ApiTransitionsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -99,6 +100,12 @@ Route::middleware('auth:sanctum')->prefix('tickets')->group(function () {
     Route::post('/{ticketId}/comments', [TicketsController::class, 'addComment']);
     Route::get('/{ticketId}/download/{type}', [TicketsController::class, 'downloadAttachment']);
     Route::get('/comments/{commentId}/download', [TicketsController::class, 'downloadCommentAttachment']);
+});
+
+// Transitions (Payment History) routes
+Route::prefix('payments')->group(function () {
+    // Public read endpoint (expects company_id or user_id); no design change required on frontend
+    Route::get('/history', [ApiTransitionsController::class, 'getUserTransitions']);
 });
 
 

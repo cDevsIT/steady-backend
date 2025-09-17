@@ -204,7 +204,7 @@
                                             <a href="{{ route('admin.companies',$customer->id) }}" class="btn btn-outline-info btn-sm me-1" title="View Companies">
                                                 <i class="fas fa-building"></i>
                                             </a>
-                                            <button type="button" class="btn btn-outline-primary btn-sm" data-toggle="modal" data-target="#customer_user_update{{$customer->id}}" title="Edit">
+                                            <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#customer_user_update{{$customer->id}}" title="Edit">
                                                 <i class="fas fa-edit"></i>
                                             </button>
                                         </div>
@@ -242,13 +242,11 @@
     <div class="modal fade" id="customer_user_update{{$customer->id}}" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content border-0 shadow">
-                <div class="modal-header bg-primary text-white position-relative">
-                    <h5 class="modal-title" id="editModalLabel">
-                        <i class="fas fa-edit me-2"></i>Edit Customer
+                <div class="modal-header bg-white border-0 py-3">
+                    <h5 class="modal-title fw-bold text-dark" id="editModalLabel">
+                        <i class="fas fa-edit me-2 text-primary"></i>Edit Customer
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-dismiss="modal" aria-label="Close">
-                        <i class="fas fa-times"></i>
-                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
                     <form action="{{route("admin.customerUpdate",$customer->id)}}" method="post">
@@ -287,18 +285,18 @@
                             <input type="password" class="form-control form-control-sm" id="password" name="password" placeholder="Leave blank to keep current password">
                         </div>
                         <div class="mb-4">
-                            <div class="d-flex align-items-center">
-                                <label class="form-label fw-semibold text-muted me-3 mb-0 small" style="min-width: 120px;">Account Status</label>
-                                <div class="toggle-switch d-flex align-items-center">
-                                    <input type="checkbox" class="toggle-input" name="active" id="active" {{$customer->active ? 'checked' : ''}}>
-                                    <label class="toggle-label" for="active">
-                                        <span class="toggle-slider"></span>
-                                    </label>
-                                </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="active" id="active" {{$customer->active ? 'checked' : ''}}>
+                                <label class="form-check-label fw-semibold text-muted small" for="active">
+                                    <i class="fas fa-toggle-on me-2 text-success"></i>Active Account
+                                </label>
                             </div>
                         </div>
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary">
+                        <div class="d-flex gap-2 justify-content-end">
+                            <button type="button" class="btn btn-outline-secondary-modern btn-sm" data-bs-dismiss="modal">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </button>
+                            <button type="submit" class="btn btn-primary-modern btn-sm">
                                 <i class="fas fa-save me-2"></i>Update Customer
                             </button>
                         </div>
