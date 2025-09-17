@@ -228,6 +228,8 @@ Route::group(['middleware' => ['auth', 'role:' . RoleEnum::ADMIN], 'prefix' => '
     Route::resource('categories', \App\Http\Controllers\Admin\CategoryController::class)->names('categories');
     Route::resource('blogs', \App\Http\Controllers\Admin\BlogController::class)->names('blogs');
     Route::resource('tickets', \App\Http\Controllers\Admin\TicketController::class)->names('tickets');
+    // Tickets - Admin create
+    Route::post('/tickets/admin-create', [\App\Http\Controllers\Admin\TicketController::class, 'adminStore'])->name('tickets.adminStore');
     Route::get('try-to-register-list', [\App\Http\Controllers\Admin\PrimaryContactController::class, 'index'])->name('admin.try_to_register_list');
 });
 

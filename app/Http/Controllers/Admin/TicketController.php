@@ -25,18 +25,20 @@ class TicketController extends Controller
         $paginate = 30;
         $query = Ticket::orderBy('id', 'DESC')
             ->leftJoin('users', 'users.id', '=', 'tickets.user_id')
+            ->leftJoin('companies', 'companies.id', '=', 'tickets.company_id')
             ->where(function ($q) use ($request) {
-                if ($request->has('search')) {
+                if ($request->filled('search')) {
                     $q->where('tickets.id', $request->search)
                         ->orWhere('tickets.title', 'LIKE', '%' . $request->search . '%')
                         ->orWhere('users.first_name', 'LIKE', '%' . $request->search . '%')
                         ->orWhere('users.last_name', 'LIKE', '%' . $request->search . '%')
-                        ->orWhere('users.email', 'LIKE', '%' . $request->search . '%');
+                        ->orWhere('users.email', 'LIKE', '%' . $request->search . '%')
+                        ->orWhere('companies.company_name', 'LIKE', '%' . $request->search . '%');
                 }
 
 
             })->where(function ($q) use ($request) {
-                if ($request->has('status')) {
+                if ($request->filled('status')) {
                     $q->where('tickets.status', $request->status);
                 }
 
@@ -58,7 +60,8 @@ class TicketController extends Controller
                 'users.first_name',
                 'users.last_name',
                 'users.email',
-                'users.phone');
+                'users.phone',
+                'companies.company_name');
 
 //            ->paginate($paginate);dd($query);
 
@@ -66,7 +69,7 @@ class TicketController extends Controller
             $tickets = $query->get();
             // Create CSV file content
             $csvData = [];
-            $csvData[] = ['ID', 'Created At', 'Title', 'status', 'first_name', 'last_name', 'email', 'phone'];
+            $csvData[] = ['ID', 'Created At', 'Title', 'status', 'first_name', 'last_name', 'email', 'phone', 'company_name'];
 
             foreach ($tickets as $ticket) {
                 $csvData[] = [
@@ -78,6 +81,7 @@ class TicketController extends Controller
                     $ticket->last_name,
                     $ticket->email,
                     $ticket->phone,
+                    $ticket->company_name,
 
                 ];
             }
@@ -103,15 +107,34 @@ class TicketController extends Controller
 
         $tickets = $query->paginate($paginate);
 
-        // Pass the tickets to the view for display
-        return view('admin.tickets.index', compact('tickets'))->with('i', ($request->input('page', 1) - 1) * $paginate);
+        // Calculate summary statistics
+        $totalTickets = Ticket::count();
+        $openTickets = Ticket::where('status', 'Open')->count();
+        $closedTickets = Ticket::whereIn('status', ['Close', 'Closed'])->count(); // Keep both for backward compatibility
+        $uniqueCustomers = Ticket::distinct('user_id')->count('user_id');
+
+        // Pass the tickets and statistics to the view for display
+        return view('admin.tickets.index', compact('tickets', 'totalTickets', 'openTickets', 'closedTickets', 'uniqueCustomers'))->with('i', ($request->input('page', 1) - 1) * $paginate);
     }
 
     public function show(Ticket $ticket, Request $request)
     {
         $ticket = Ticket::where('tickets.id', $ticket->id)
             ->leftJoin('users', 'users.id', '=', 'tickets.user_id')
-            ->select('tickets.id', 'tickets.title', 'tickets.status', 'tickets.content', 'tickets.file_name', 'users.first_name', 'users.last_name', 'users.email', 'users.phone', 'users.role')->first();
+            ->leftJoin('companies', 'companies.id', '=', 'tickets.company_id')
+            ->select(
+                'tickets.id',
+                'tickets.title',
+                'tickets.status',
+                'tickets.content',
+                'tickets.file_name',
+                'users.first_name',
+                'users.last_name',
+                'users.email',
+                'users.phone',
+                'users.role',
+                'companies.company_name'
+            )->first();
 
         $comments = Comment::where('comments.ticket_id', $ticket->id)
             ->leftJoin('users', 'users.id', '=', 'comments.user_id')
@@ -145,11 +168,56 @@ class TicketController extends Controller
 
         }
         $comment->save();
-        $ticket->status = $request->status;
+        
+        // Standardize status values - always save as 'Close' (without 'd') for consistency
+        $status = $request->status;
+        if ($status === 'Closed') {
+            $status = 'Close';
+        }
+        $ticket->status = $status;
         $ticket->save();
 //        $user = User::find($ticket->user_id);
 //        $route = route('web.viewTicket', $ticket);
 //        TicketCommandJob::dispatch($comment, $route, $user);
         return redirect()->back()->with('success', 'Comment successfully. Done');
+    }
+
+    public function adminStore(Request $request)
+    {
+        $request->validate([
+            'company_id' => 'required|exists:companies,id',
+            'title' => 'required|string|max:255',
+            'content' => 'required|string',
+            'status' => 'nullable|in:Open,Closed',
+            'user_id' => 'nullable|exists:users,id',
+            'attachment' => 'nullable|file|max:5120',
+        ]);
+
+        $company = Company::findOrFail($request->company_id);
+        $userId = $request->user_id ?: $company->user_id;
+
+        $ticket = new Ticket();
+        $ticket->title = $request->title;
+        $ticket->content = $request->content;
+        $ticket->status = $request->status === 'Closed' ? 'Close' : ($request->status ?: 'Open');
+        $ticket->user_id = $userId;
+        $ticket->company_id = $company->id;
+
+        if ($request->hasFile('attachment')) {
+            $thumbnail_path = 'uploads/tickets';
+            if (!Storage::disk('public')->directoryExists($thumbnail_path)) {
+                Storage::disk('public')->makeDirectory($thumbnail_path);
+            }
+            $file = $request->file('attachment');
+            $filenameWithExt = $file->getClientOriginalName();
+            $generate_name = time() . $filenameWithExt;
+            $fileNameToStore = $thumbnail_path . "/" . $generate_name;
+            Storage::disk("public")->put($fileNameToStore, file_get_contents($file));
+            $ticket->file_name = $fileNameToStore;
+        }
+
+        $ticket->save();
+
+        return redirect()->route('tickets.index')->with('success', 'Ticket created successfully.');
     }
 }

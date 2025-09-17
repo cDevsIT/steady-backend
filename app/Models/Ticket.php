@@ -26,6 +26,11 @@ class Ticket extends Model
     public function user(){
         return $this->belongsTo(User::class,'user_id');
     }
+    
+    public function company(){
+        return $this->belongsTo(Company::class,'company_id');
+    }
+    
     public function comments()
     {
         return $this->hasMany(Comment::class, 'ticket_id', 'id');

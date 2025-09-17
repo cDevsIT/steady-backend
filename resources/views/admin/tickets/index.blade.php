@@ -116,7 +116,7 @@
                             </label>
                             <input type="text" 
                                    class="form-control form-control-sm" 
-                                   placeholder="Company or customer name..." 
+                                   placeholder="Company, customer name, or email..." 
                                    value="{{request()->search}}" 
                                    name="search">
                         </div>
@@ -150,10 +150,13 @@
 
         <!-- Modern Main Content Card -->
         <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-0 py-3">
+            <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
                 <h5 class="mb-0 fw-bold text-dark">
                     <i class="fas fa-list me-2 text-primary"></i>Tickets List
                 </h5>
+                <button class="btn btn-primary btn-sm d-inline-flex align-items-center" data-bs-toggle="modal" data-bs-target="#createTicketModal">
+                    <i class="fas fa-plus me-2"></i>Create Ticket
+                </button>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -169,6 +172,9 @@
                                 </th>
                                 <th class="border-0 py-2 px-2 fw-semibold text-muted small" style="width: 150px;">
                                     <i class="fas fa-user me-1"></i>Customer
+                                </th>
+                                <th class="border-0 py-2 px-2 fw-semibold text-muted small" style="width: 150px;">
+                                    <i class="fas fa-building me-1"></i>Company
                                 </th>
                                 <th class="border-0 py-2 px-2 fw-semibold text-muted small" style="width: 180px;">
                                     <i class="fas fa-envelope me-1"></i>Email
@@ -200,6 +206,9 @@
                                         <span class="fw-semibold small">{{ $ticket->first_name ." ". $ticket->last_name }}</span>
                                     </td>
                                     <td class="py-2 px-2">
+                                        <span class="fw-semibold small">{{ $ticket->company_name ?? 'N/A' }}</span>
+                                    </td>
+                                    <td class="py-2 px-2">
                                         <a href="mailto:{{ $ticket->email }}" class="text-primary small">
                                             <i class="fas fa-envelope me-1"></i>{{ $ticket->email }}
                                         </a>
@@ -216,7 +225,7 @@
                                             </span>
                                         @else
                                             <span class="badge bg-danger-subtle text-danger rounded-pill px-3 py-2">
-                                                <i class="fas fa-door-closed me-1"></i>Closed
+                                                <i class="fas fa-door-closed me-1"></i>{{ $ticket->status == 'Close' ? 'Closed' : $ticket->status }}
                                             </span>
                                         @endif
                                     </td>
@@ -254,6 +263,158 @@
             @endif
         </div>
     </div>
+    
+    <!-- Create Ticket Modal -->
+    <div class="modal fade" id="createTicketModal" tabindex="-1" aria-labelledby="createTicketModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createTicketModalLabel"><i class="fas fa-plus-circle me-2 text-primary"></i>Create New Ticket</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="POST" action="{{ route('tickets.adminStore') }}" enctype="multipart/form-data" id="adminCreateTicketForm">
+                    @csrf
+                    <div class="modal-body">
+                        <div id="adminTicketError" class="alert alert-danger d-none py-2 px-3 small" role="alert">
+                            <i class="fas fa-exclamation-triangle me-1"></i>
+                            Please fill required fields.
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-muted small">Company</label>
+                                <select name="company_id" id="company_id" class="form-select" required data-placeholder="Search company by name...">
+                                    <option value="">Select a company</option>
+                                    @foreach(\App\Models\Company::orderBy('company_name')->limit(200)->get() as $company)
+                                        <option value="{{ $company->id }}">{{ $company->company_name }} (ID: {{ $company->id }})</option>
+                                    @endforeach
+                                </select>
+                                <small class="text-muted">Start typing to filter.</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-muted small">User (optional)</label>
+                                <select name="user_id" id="user_id" class="form-select" data-placeholder="Search user by name/email...">
+                                    <option value="">Auto-detect from company</option>
+                                    @foreach(\App\Models\User::orderBy('first_name')->limit(200)->get() as $user)
+                                        <option value="{{ $user->id }}">{{ $user->first_name }} {{ $user->last_name }} - {{ $user->email }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label fw-semibold text-muted small">Subject</label>
+                                <input type="text" name="title" class="form-control" placeholder="Subject" required />
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label fw-semibold text-muted small">Message</label>
+                                <textarea name="content" id="admin_ticket_content" class="form-control" rows="5" placeholder="Write message..." required></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-muted small">Attachment</label>
+                                <input type="file" name="attachment" class="form-control" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-muted small">Status</label>
+                                <select name="status" class="form-select">
+                                    <option value="Open">Open</option>
+                                    <option value="Closed">Closed</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create Ticket</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @push('js')
+    <script>
+        (function(){
+            const companySelect = document.getElementById('company_id');
+            const userSelect = document.getElementById('user_id');
+            const form = document.getElementById('adminCreateTicketForm');
+            const errorBox = document.getElementById('adminTicketError');
+            // Company -> User map (server-rendered)
+            const companyUserMap = {
+@php($companyUsers = \App\Models\Company::select('id','user_id')->get())
+@foreach($companyUsers as $c)
+                "{{ $c->id }}": "{{ $c->user_id }}",
+@endforeach
+            };
+            // Minimal user display map for all users referenced by companies
+            const userDisplayMap = {
+@php($userIds = $companyUsers->pluck('user_id')->unique())
+@foreach(\App\Models\User::whereIn('id', $userIds)->get(['id','first_name','last_name','email']) as $u)
+                "{{ $u->id }}": "{{ trim($u->first_name.' '.$u->last_name) }} - {{ $u->email }}",
+@endforeach
+            };
+
+            function filterSelect(select, query){
+                const q = query.toLowerCase();
+                Array.from(select.options).forEach((opt, idx)=>{
+                    if(idx===0) return;
+                    opt.hidden = !opt.text.toLowerCase().includes(q);
+                });
+            }
+
+            // Simple search: when typing in select, filter options
+            [companySelect, userSelect].forEach((sel)=>{
+                sel.addEventListener('keyup', (e)=>{
+                    filterSelect(sel, e.target.value || '');
+                });
+            });
+
+            // Auto-select user when company changes
+            function autoSelectUser(){
+                const companyId = companySelect.value;
+                const mappedUserId = companyUserMap[companyId];
+                if(mappedUserId){
+                    // Try select if option exists
+                    const optExists = Array.from(userSelect.options).some(o => o.value === mappedUserId);
+                    if(!optExists){
+                        // Create option on the fly if not present
+                        const opt = document.createElement('option');
+                        opt.value = mappedUserId;
+                        opt.text = userDisplayMap[mappedUserId] || ("User #"+mappedUserId);
+                        userSelect.appendChild(opt);
+                    }
+                    userSelect.value = mappedUserId;
+                }
+            }
+            companySelect.addEventListener('change', autoSelectUser);
+            // Also run when modal becomes visible
+            const modalEl = document.getElementById('createTicketModal');
+            if (modalEl) {
+                modalEl.addEventListener('shown.bs.modal', autoSelectUser);
+            }
+
+            form.addEventListener('submit', function(e){
+                errorBox.classList.add('d-none');
+                if(!companySelect.value || !form.title.value.trim() || !form.content.value.trim()){
+                    e.preventDefault();
+                    errorBox.classList.remove('d-none');
+                }
+            });
+
+            // Auto-open Create Ticket modal if ?create=1 is present
+            try {
+                const params = new URLSearchParams(window.location.search);
+                if (params.get('create') === '1') {
+                    const modalEl = document.getElementById('createTicketModal');
+                    if (modalEl && window.bootstrap && window.bootstrap.Modal) {
+                        const modal = new bootstrap.Modal(modalEl);
+                        modal.show();
+                    } else if (modalEl) {
+                        // Fallback for Bootstrap 4
+                        $(modalEl).modal('show');
+                    }
+                }
+            } catch (e) {}
+        })();
+    </script>
+    @endpush
 @endsection
 
 @push('js')

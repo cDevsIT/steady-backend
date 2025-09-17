@@ -11,16 +11,16 @@
                     <h1 class="page-title-modern">Ticket #{{$ticket->id}}</h1>
                     <p class="page-subtitle-modern">Customer support ticket details and conversation</p>
                 </div>
-                <div class="d-flex gap-2">
-                    <a href="{{ route('tickets.index') }}" class="btn btn-outline-secondary-modern">
+                <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
+                    <a href="{{ route('tickets.index') }}" class="btn btn-outline-secondary-modern btn-sm d-inline-flex align-items-center">
                         <i class="fas fa-arrow-left me-2"></i>Back to Tickets
                     </a>
                     @if($ticket->status == 'Open')
-                        <span class="badge bg-success-subtle text-success rounded-pill px-3 py-2">
+                        <span class="badge bg-success-subtle text-success rounded-pill px-3 py-3 d-inline-flex align-items-center">
                             <i class="fas fa-door-open me-1"></i>Open
                         </span>
                     @else
-                        <span class="badge bg-danger-subtle text-danger rounded-pill px-3 py-2">
+                        <span class="badge bg-danger-subtle text-danger rounded-pill px-3 py-3 d-inline-flex align-items-center">
                             <i class="fas fa-door-closed me-1"></i>Closed
                         </span>
                     @endif
@@ -82,27 +82,22 @@
                                 <h6 class="fw-bold text-dark mb-3">
                                     <i class="fas fa-user me-2 text-primary"></i>Customer Information
                                 </h6>
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold text-muted small">Name</label>
-                                    <p class="form-control-plaintext fw-semibold small">
-                                        {{ $ticket->first_name ." ". $ticket->last_name }}
-                                    </p>
+
+                                <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                                    <span class="text-muted small d-inline-flex align-items-center">Name</span>
+                                    <span class="fw-semibold small d-inline-flex align-items-center">{{ $ticket->first_name ." ". $ticket->last_name }}</span>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold text-muted small">Email</label>
-                                    <p class="form-control-plaintext small">
-                                        <a href="mailto:{{ $ticket->email }}" class="text-primary">
-                                            <i class="fas fa-envelope me-1"></i>{{ $ticket->email }}
-                                        </a>
-                                    </p>
+                                <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                                    <span class="text-muted small d-inline-flex align-items-center">Company</span>
+                                    <span class="small fw-semibold d-inline-flex align-items-center">{{ $ticket->company_name ?? 'N/A' }}</span>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold text-muted small">Phone</label>
-                                    <p class="form-control-plaintext small">
-                                        <a href="tel:{{ $ticket->phone }}" class="text-primary">
-                                            <i class="fas fa-phone me-1"></i>{{ $ticket->phone }}
-                                        </a>
-                                    </p>
+                                <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                                    <span class="text-muted small d-inline-flex align-items-center">Email</span>
+                                    <span class="small d-inline-flex align-items-center"><a href="mailto:{{ $ticket->email }}" class="text-primary"><i class="fas fa-envelope me-1"></i>{{ $ticket->email }}</a></span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="text-muted small d-inline-flex align-items-center">Phone</span>
+                                    <span class="small d-inline-flex align-items-center"><a href="tel:{{ $ticket->phone }}" class="text-primary"><i class="fas fa-phone me-1"></i>{{ $ticket->phone }}</a></span>
                                 </div>
                             </div>
                         </div>
@@ -176,10 +171,15 @@
                                 <h6 class="fw-bold text-dark mb-3">
                                     <i class="fas fa-reply me-2 text-primary"></i>Add Response
                                 </h6>
-                                <form action="{{ route('tickets.store') }}" method="POST" enctype="multipart/form-data">
+                                <form action="{{ route('tickets.store') }}" method="POST" enctype="multipart/form-data" id="ticketReplyForm">
                                     @csrf
                                     <input type="hidden" name="ticket_id" value="{{$ticket->id}}">
                                     
+                                    <div id="ticketError" class="alert alert-danger d-none py-2 px-3 small" role="alert">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>
+                                        Please enter a response before updating the ticket status.
+                                    </div>
+
                                     <div class="mb-3">
                                         <label for="comment_text" class="form-label fw-semibold text-muted small">
                                             <i class="fas fa-comment me-2 text-primary"></i>Your Response
@@ -188,8 +188,7 @@
                                                   id="comment_text" 
                                                   name="comment_text" 
                                                   rows="4" 
-                                                  placeholder="Type your response here..."
-                                                  required></textarea>
+                                                  placeholder="Type your response here..."></textarea>
                                         @error('comment_text')
                                             <span class="invalid-feedback" role="alert">
                                                 <strong>{{ $message }}</strong>
@@ -205,7 +204,7 @@
                                                 </label>
                                                 <select name="status" id="status" class="form-control form-control-sm">
                                                     <option {{$ticket->status == 'Open' ? 'selected' : ''}} value="Open">Keep Open</option>
-                                                    <option value="Closed">Close Ticket</option>
+                                                    <option {{$ticket->status == 'Close' ? 'selected' : ''}} value="Closed">Close Ticket</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -223,7 +222,7 @@
                                     </div>
                                     
                                     <div class="d-flex justify-content-end gap-2">
-                                        <button type="submit" class="btn btn-primary-modern btn-sm">
+                                        <button type="submit" class="btn btn-primary-modern btn-sm" id="ticketSubmitBtn">
                                             <i class="fas fa-paper-plane me-2"></i>Send Response
                                         </button>
                                     </div>
@@ -283,6 +282,18 @@
                     ['font', ['strikethrough', 'superscript', 'subscript']],
                     ['para', ['ul', 'ol']]
                 ]
+            });
+            // Prevent submit without text
+            $('#ticketReplyForm').on('submit', function(e){
+                var content = $('#comment_text').summernote('code');
+                var sanitized = content.replace(/<[^>]*>/g, '').trim();
+                if(!sanitized){
+                    e.preventDefault();
+                    $('#ticketError').removeClass('d-none');
+                    $('html, body').animate({ scrollTop: $('#ticketError').offset().top - 120 }, 300);
+                } else {
+                    $('#ticketError').addClass('d-none');
+                }
             });
         });
         {{--function showComments() {--}}

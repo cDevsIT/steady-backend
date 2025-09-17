@@ -155,6 +155,13 @@
                                 <span class="nav-content">Closed Tickets</span>
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a href="{{ route('tickets.index', ['create' => 1]) }}"
+                               class="nav-link {{ session('lsbsm') == 'ticketsCreate' ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-circle"></i>
+                                <span class="nav-content">Create Ticket</span>
+                            </a>
+                        </li>
                     </ul>
                 </div>
             </li>
