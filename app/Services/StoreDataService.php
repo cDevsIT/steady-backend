@@ -29,6 +29,12 @@ class StoreDataService
         try {
             $result = DB::transaction(function () use ($data) {
                 $userData = $data['s2_stepTowData'];
+                
+                // Validate email format
+                if (!filter_var($userData['email'], FILTER_VALIDATE_EMAIL)) {
+                    throw new \Exception('Invalid email format: ' . $userData['email']);
+                }
+                
                 $password = generateStrongPassword();
 
                 if (Auth::check()) {
@@ -91,7 +97,7 @@ class StoreDataService
                 $order->company_id = $company->id;
                 $order->user_id = $user->id;
                 $order->state_name = $data['s3_state_name'];
-                $state = StateFee::find($data['s3_state_name']);
+                $state = StateFee::where('state_name', $data['s3_state_name'])->first();
                 $order->state_id = $state ? $state->id : null;
 
                 $order->state_filing_fee = $data['s3_start_fee'];

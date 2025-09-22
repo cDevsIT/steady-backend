@@ -285,7 +285,7 @@
                                 <select name="company_id" id="company_id" class="form-select" required data-placeholder="Search company by name...">
                                     <option value="">Select a company</option>
                                     @foreach(\App\Models\Company::orderBy('company_name')->limit(200)->get() as $company)
-                                        <option value="{{ $company->id }}">{{ $company->company_name }} (ID: {{ $company->id }})</option>
+                                        <option value="{{ $company->id }}">{{ $company->company_name }}</option>
                                     @endforeach
                                 </select>
                                 <small class="text-muted">Start typing to filter.</small>

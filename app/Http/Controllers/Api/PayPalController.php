@@ -7,6 +7,7 @@ use App\Models\Company;
 use App\Models\Order;
 use App\Models\Transition;
 use App\Models\User;
+use App\Models\StateFee;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
@@ -300,7 +301,11 @@ class PayPalController extends Controller
         $laravelData['s3_type_of_industry'] = $nextJsData['businessDetails']['industryType'] ?? '';
         $laravelData['s3_state_name'] = $nextJsData['businessDetails']['stateName'] ?? '';
         $laravelData['s3_number_of_ownership'] = $nextJsData['businessDetails']['number_of_ownership'] ?? 1;
-        $laravelData['s3_start_fee'] = 100; // Default state filing fee
+        
+        // Get dynamic state fee from database
+        $stateName = $nextJsData['businessDetails']['stateName'] ?? '';
+        $stateFee = StateFee::where('state_name', $stateName)->first();
+        $laravelData['s3_start_fee'] = $stateFee ? $stateFee->fees : 100; // Use dynamic fee or fallback to 100
         
         // Step 4: Plan Selection
         $laravelData['s4_plan'] = [

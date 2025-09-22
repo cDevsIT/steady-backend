@@ -177,16 +177,6 @@
             margin-left: auto;
         }
 
-        .nav-item.menu-open .nav-arrow {
-            transform: rotate(-90deg);
-        }
-
-        .modern-sidebar.collapsed .nav-arrow {
-            opacity: 0;
-            width: 0;
-            overflow: hidden;
-        }
-
         .nav-treeview {
             padding-left: 0;
             margin-top: 0.5rem;
