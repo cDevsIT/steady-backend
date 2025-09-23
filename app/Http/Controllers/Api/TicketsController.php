@@ -322,6 +322,12 @@ class TicketsController extends Controller
 
             $comment->save();
 
+            // If ticket status is 'admin_ticket' and client is replying, change to 'Open'
+            if ($ticket->status === 'admin_ticket' && $user->role === 2) {
+                $ticket->status = 'Open';
+                $ticket->save();
+            }
+
             // Load the created comment with user data
             $comment->load('user:id,first_name,last_name,email,role');
 

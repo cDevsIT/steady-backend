@@ -126,6 +126,7 @@
                             </label>
                             <select name="status" class="form-control form-control-sm">
                                 <option value="">All Status</option>
+                                <option value="admin_ticket" {{request()->status == 'admin_ticket' ? 'selected' : ''}}>Admin Tickets</option>
                                 <option value="Open" {{request()->status == 'Open' ? 'selected' : ''}}>Open</option>
                                 <option value="Close" {{request()->status == 'Close' ? 'selected' : ''}}>Closed</option>
                             </select>
@@ -182,6 +183,9 @@
                                 <th class="border-0 py-2 px-2 fw-semibold text-muted small" style="width: 120px;">
                                     <i class="fas fa-phone me-1"></i>Phone
                                 </th>
+                                <th class="border-0 py-2 px-2 fw-semibold text-muted small" style="width: 135px;">
+                                    <i class="fas fa-reply me-1"></i>Answered
+                                </th>
                                 <th class="border-0 py-2 px-2 fw-semibold text-muted small text-center" style="width: 100px;">
                                     <i class="fas fa-info-circle me-1"></i>Status
                                 </th>
@@ -219,9 +223,31 @@
                                         </a>
                                     </td>
                                     <td class="py-2 px-2 text-center">
+                                        @php
+                                            $lastComment = \App\Models\Comment::where('ticket_id', $ticket->id)
+                                                ->with('user')
+                                                ->orderBy('created_at', 'desc')
+                                                ->first();
+                                            $isAnswered = $lastComment && $lastComment->user && $lastComment->user->role == 1;
+                                        @endphp
+                                        @if($isAnswered)
+                                            <span class="badge bg-success-subtle text-success rounded-pill px-3 py-2">
+                                                <i class="fas fa-check me-1"></i>Yes
+                                            </span>
+                                        @else
+                                            <span class="badge bg-warning-subtle text-warning rounded-pill px-3 py-2">
+                                                <i class="fas fa-clock me-1"></i>No
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <td class="py-2 px-2 text-center">
                                         @if($ticket->status == 'Open')
                                             <span class="badge bg-success-subtle text-success rounded-pill px-3 py-2">
                                                 <i class="fas fa-door-open me-1"></i>Open
+                                            </span>
+                                        @elseif($ticket->status == 'admin_ticket')
+                                            <span class="badge bg-warning-subtle text-warning rounded-pill px-3 py-2">
+                                                <i class="fas fa-user-shield me-1"></i>Admin Ticket
                                             </span>
                                         @else
                                             <span class="badge bg-danger-subtle text-danger rounded-pill px-3 py-2">
@@ -314,6 +340,7 @@
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold text-muted small">Status</label>
                                 <select name="status" class="form-select">
+                                    <option value="admin_ticket">Admin Ticket</option>
                                     <option value="Open">Open</option>
                                     <option value="Closed">Closed</option>
                                 </select>

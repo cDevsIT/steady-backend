@@ -21,7 +21,14 @@ class TicketController extends Controller
 {
     public function index(Request $request)
     {
-        menuSubmenu('tickets', 'tickets' . $request->status);
+        // Set appropriate menu selection based on request parameters
+        if ($request->has('create') && $request->create == '1') {
+            menuSubmenu('tickets', 'ticketsCreate');
+        } elseif ($request->status == 'admin_ticket') {
+            menuSubmenu('tickets', 'ticketsAdmin');
+        } else {
+            menuSubmenu('tickets', 'tickets' . $request->status);
+        }
         $paginate = 30;
         $query = Ticket::orderBy('id', 'DESC')
             ->leftJoin('users', 'users.id', '=', 'tickets.user_id')
@@ -188,7 +195,7 @@ class TicketController extends Controller
             'company_id' => 'required|exists:companies,id',
             'title' => 'required|string|max:255',
             'content' => 'required|string',
-            'status' => 'nullable|in:Open,Closed',
+            'status' => 'nullable|in:Open,Closed,admin_ticket',
             'user_id' => 'nullable|exists:users,id',
             'attachment' => 'nullable|file|max:5120',
         ]);
@@ -199,7 +206,7 @@ class TicketController extends Controller
         $ticket = new Ticket();
         $ticket->title = $request->title;
         $ticket->content = $request->content;
-        $ticket->status = $request->status === 'Closed' ? 'Close' : ($request->status ?: 'Open');
+        $ticket->status = $request->status === 'Closed' ? 'Close' : ($request->status ?: 'admin_ticket');
         $ticket->user_id = $userId;
         $ticket->company_id = $company->id;
 
