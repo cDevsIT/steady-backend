@@ -225,6 +225,6 @@ class TicketController extends Controller
 
         $ticket->save();
 
-        return redirect()->route('tickets.index')->with('success', 'Ticket created successfully.');
+        return redirect()->route('tickets.index', ['status' => 'admin_ticket'])->with('success', 'Ticket created successfully.');
     }
 }

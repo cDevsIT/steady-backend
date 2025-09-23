@@ -164,7 +164,7 @@
                 </div>
 
                 <!-- Modern Reply Form -->
-                @if($ticket->status == 'Open')
+                @if($ticket->status == 'Open' || $ticket->status == 'admin_ticket')
                     <div class="reply-form mt-4">
                         <div class="card border-0 bg-light">
                             <div class="card-body">
@@ -203,6 +203,7 @@
                                                     <i class="fas fa-toggle-on me-2 text-warning"></i>Update Status
                                                 </label>
                                                 <select name="status" id="status" class="form-control form-control-sm">
+                                                    <option {{$ticket->status == 'admin_ticket' ? 'selected' : ''}} value="admin_ticket">Admin Ticket</option>
                                                     <option {{$ticket->status == 'Open' ? 'selected' : ''}} value="Open">Keep Open</option>
                                                     <option {{$ticket->status == 'Close' ? 'selected' : ''}} value="Closed">Close Ticket</option>
                                                 </select>
