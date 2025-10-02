@@ -106,6 +106,20 @@ class StripePaymentController extends Controller
             ];
         }
 
+        // Add Multimember Fee
+        if ($order->multimember_fee) {
+            $line_items[] = [
+                'price_data' => [
+                    'currency' => 'usd',
+                    'product_data' => [
+                        'name' => 'Multimember Fee',
+                    ],
+                    'unit_amount' => $order->multimember_fee * 100,
+                ],
+                'quantity' => 1,
+            ];
+        }
+
         Stripe::setApiKey(env('STRIPE_SECRET'));
         $checkout_session = Session::create([
             'payment_method_types' => ['card'],
