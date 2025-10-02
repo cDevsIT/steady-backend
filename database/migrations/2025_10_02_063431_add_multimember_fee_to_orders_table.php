@@ -12,7 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('orders', function (Blueprint $table) {
-            //
+            $table->decimal('multimember_fee', 10, 2)->default(0)->after('processing_amount');
+            $table->boolean('has_multimember')->default(false)->after('has_processing');
         });
     }
 
@@ -22,7 +23,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('orders', function (Blueprint $table) {
-            //
+            $table->dropColumn(['multimember_fee', 'has_multimember']);
         });
     }
 };

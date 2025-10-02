@@ -117,6 +117,10 @@ class StoreDataService
                 if ($order->processing_amount > 0) {
                     $order->has_processing = 1;
                 }
+                $order->multimember_fee = $data['s8_multimember_fee'] ?? 0;
+                if ($order->multimember_fee > 0) {
+                    $order->has_multimember = 1;
+                }
                 $order->register_agent_type = isset($data['agentInfo']) ? $data['agentInfo'] : '';
                 if ($order->register_agent_type == 'own registered agent') {
                     $order->register_agent_infos = isset($data['agentInfoTwo']) ? $data['agentInfoTwo'] : '';
@@ -129,7 +133,8 @@ class StoreDataService
                     $order->package_amount +
                     $order->en_amount +
                     $order->agreement_amount +
-                    $order->processing_amount;
+                    $order->processing_amount +
+                    $order->multimember_fee;
                 $order->save();
 
                 $company->order_id = $order->order_id;
@@ -175,6 +180,7 @@ class StoreDataService
 //                Log::info("Company Order Amount: " . $company->total_amount);
 
                 $memberInfos = $data['s3_multi_member_info'];
+                $ownerIds = [];
                 foreach ($memberInfos as $memberInfo) {
                     $owner = new OwnerInfo();
                     $owner->company_id = $company->id;
@@ -189,6 +195,7 @@ class StoreDataService
                     $owner->zip_code = $memberInfo['zip_code'];
                     $owner->country = $memberInfo['country'];
                     $owner->save();
+                    $ownerIds[] = $owner->id;
                 }
                 // Log successful creation
                 Log::info('Company formation successful:', [
@@ -203,6 +210,7 @@ class StoreDataService
                     "user_id" => $user->id,
                     "company_id" => $company->id,
                     "order" => $order,
+                    "owner_ids" => $ownerIds,
                 ];
             });
             return $result;

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to Steady Formation</title>
+    <title>Password Reset - Verification Code</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -34,37 +34,42 @@
         .content {
             padding: 30px 20px;
         }
-        .credentials-box {
+        .otp-container {
             background-color: #f8f9fa;
-            border: 2px solid #7856FC;
+            border: 2px dashed #7856FC;
             border-radius: 8px;
             padding: 20px;
+            text-align: center;
             margin: 20px 0;
         }
-        .credential-item {
-            margin: 15px 0;
-            padding: 10px;
-            background-color: #ffffff;
-            border-radius: 6px;
-        }
-        .credential-label {
-            font-size: 14px;
-            color: #6c757d;
-            margin-bottom: 5px;
-        }
-        .credential-value {
-            font-size: 16px;
+        .otp-code {
+            font-size: 32px;
             font-weight: bold;
             color: #7856FC;
+            letter-spacing: 8px;
+            margin: 10px 0;
             font-family: 'Courier New', monospace;
         }
-        .security-notice {
+        .otp-label {
+            font-size: 14px;
+            color: #6c757d;
+            margin-bottom: 10px;
+        }
+        .expiry-notice {
             background-color: #fff3cd;
             border: 1px solid #ffeaa7;
             border-radius: 6px;
             padding: 15px;
             margin: 20px 0;
             color: #856404;
+        }
+        .security-tips {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #0c5460;
         }
         .footer {
             background-color: #f8f9fa;
@@ -84,42 +89,50 @@
             font-weight: 600;
             margin: 10px 0;
         }
+        .warning {
+            color: #dc3545;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
     <div class="email-container">
         <!-- Header -->
         <div class="header">
-            <h1>Welcome to Steady Formation!</h1>
-            <p style="margin: 10px 0 0 0; opacity: 0.9;">Your Account Has Been Created</p>
+            <h1>Password Reset</h1>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">Steady Formation</p>
         </div>
 
         <!-- Content -->
         <div class="content">
-            <h2>Dear {{$user->first_name}} {{$user->last_name}},</h2>
+            <h2>Hello {{ $userName }},</h2>
             
-            <p>Welcome to Steady Formation! Your account has been successfully created. Below are your login credentials:</p>
+            <p>We received a request to reset your password for your Steady Formation account. To complete the password reset process, please use the verification code below:</p>
 
-            <!-- Credentials Box -->
-            <div class="credentials-box">
-                <div class="credential-item">
-                    <div class="credential-label">Email Address:</div>
-                    <div class="credential-value">{{$user->email}}</div>
-                </div>
-                <div class="credential-item">
-                    <div class="credential-label">Password:</div>
-                    <div class="credential-value">{{$password}}</div>
-                </div>
+            <!-- OTP Code -->
+            <div class="otp-container">
+                <div class="otp-label">Your verification code is:</div>
+                <div class="otp-code">{{ $otp }}</div>
+                <div class="otp-label">Enter this code in the verification page</div>
             </div>
 
-            <!-- Security Notice -->
-            <div class="security-notice">
-                <strong>🔒 Security Reminder:</strong> For your security, we recommend changing your password after your first login.
+            <!-- Expiry Notice -->
+            <div class="expiry-notice">
+                <strong>⚠️ Important:</strong> This code will expire in {{ $expiresIn }} minutes. If you don't use it within this time, you'll need to request a new code.
             </div>
 
-            <p>You can now log in to your account and start managing your company formation needs.</p>
+            <!-- Security Tips -->
+            <div class="security-tips">
+                <strong>🔒 Security Tips:</strong>
+                <ul style="margin: 10px 0; padding-left: 20px;">
+                    <li>Never share this code with anyone</li>
+                    <li>Steady Formation will never ask for your verification code</li>
+                    <li>If you didn't request this password reset, please ignore this email</li>
+                    <li>Your account remains secure</li>
+                </ul>
+            </div>
 
-            <p>If you have any questions or need assistance getting started, please don't hesitate to contact our support team.</p>
+            <p>If you're having trouble with the verification code or didn't request a password reset, please contact our support team.</p>
 
             <p>Best regards,<br>
             <strong>The Steady Formation Team</strong></p>
@@ -130,7 +143,7 @@
             <p>This is an automated message. Please do not reply to this email.</p>
             <p>&copy; {{ date('Y') }} Steady Formation. All rights reserved.</p>
             <p style="font-size: 12px; margin-top: 10px;">
-                If you need help, visit our website at:<br>
+                If you're having trouble clicking the button, copy and paste the URL below into your web browser:<br>
                 <span style="color: #7856FC;">https://steadyformation.com</span>
             </p>
         </div>

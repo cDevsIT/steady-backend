@@ -242,6 +242,9 @@ class StripeController extends Controller
         // Step 7: Rush Processing Amount
         $laravelData['s7_rush_processing_amount'] = $nextJsData['rush_processing_amount'] ?? 0;
         
+        // Step 8: Multimember Fee
+        $laravelData['s8_multimember_fee'] = $nextJsData['multimemberFee'] ?? 0;
+        
         // Step 8: Agent Information
         if (isset($nextJsData['agent_information'])) {
             $laravelData['s8_agent_information'] = $nextJsData['agent_information'];

@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\CompanyStatusController;
 use App\Http\Controllers\Api\DocumentsController;
 use App\Http\Controllers\Api\TicketsController;
 use App\Http\Controllers\Api\TransitionsController as ApiTransitionsController;
+use App\Http\Controllers\Api\OwnerDocumentsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -35,6 +36,12 @@ Route::prefix('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
     Route::get('/user', [AuthController::class, 'user'])->middleware('auth:sanctum');
     Route::get('/validate-temp-token', [AuthController::class, 'validateTempToken']);
+    
+    // Password Reset Routes
+    Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+    Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
+    Route::post('/resend-otp', [AuthController::class, 'resendOtp']);
+    Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 });
 
 // User specific routes
@@ -90,6 +97,18 @@ Route::prefix('documents')->group(function () {
     Route::get('/user-documents', [DocumentsController::class, 'getUserDocuments']);
     Route::get('/download/{orderId}/{type}', [DocumentsController::class, 'downloadDocument']);
     Route::get('/file/{filename}', [DocumentsController::class, 'downloadFile']);
+});
+
+// Owner Documents routes
+Route::prefix('owner-documents')->group(function () {
+    Route::post('/upload', [OwnerDocumentsController::class, 'uploadDocuments']);
+    Route::get('/get', [OwnerDocumentsController::class, 'getDocuments']);
+    Route::post('/store-owners', [OwnerDocumentsController::class, 'storeOwners']);
+});
+
+// Company Owners routes
+Route::prefix('company')->group(function () {
+    Route::get('/{companyId}/owners', [OwnerDocumentsController::class, 'getCompanyOwners']);
 });
 
 // Tickets routes

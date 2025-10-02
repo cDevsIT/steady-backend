@@ -9,6 +9,22 @@ use Illuminate\Database\Eloquent\Model;
 class OwnerInfo extends Model
 {
     use HasFactory;
+    
+    protected $fillable = [
+        'company_id',
+        'user_id',
+        'name',
+        'email',
+        'phone',
+        'ownership_percentage',
+        'street_address',
+        'city',
+        'State',
+        'zip_code',
+        'Country',
+        'scanned_passport_copy',
+        'bank_statement'
+    ];
     public function getAttribute($key)
     {
         if ($key === 'created_at') {

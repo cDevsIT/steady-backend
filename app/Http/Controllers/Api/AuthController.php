@@ -10,6 +10,11 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
+use App\Mail\PasswordResetOTP;
 
 class AuthController extends Controller
 {
@@ -593,6 +598,355 @@ class AuthController extends Controller
             return response()->json([
                 'status' => 'error',
                 'message' => 'Logout failed',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Send OTP for password reset
+     */
+    public function forgotPassword(Request $request): JsonResponse
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'email' => 'required|email|exists:users,email',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $email = $request->email;
+            
+            // Check if user exists and is active
+            $user = User::where('email', $email)->where('active', true)->first();
+            if (!$user) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'No active account found with this email address'
+                ], 404);
+            }
+
+            // Generate 6-digit OTP
+            $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            
+            // Store OTP in cache for 10 minutes
+            $cacheKey = "password_reset_otp_{$email}";
+            Cache::put($cacheKey, [
+                'otp' => $otp,
+                'user_id' => $user->id,
+                'attempts' => 0
+            ], 600); // 10 minutes
+
+            // Send OTP via email
+            try {
+                Mail::to($email)->send(new PasswordResetOTP($otp, $user->full_name, 10));
+                
+                Log::info('Password Reset OTP sent via email', [
+                    'email' => $email,
+                    'user_id' => $user->id,
+                    'expires_at' => now()->addMinutes(10)
+                ]);
+            } catch (\Exception $mailException) {
+                Log::error('Failed to send OTP email', [
+                    'email' => $email,
+                    'error' => $mailException->getMessage()
+                ]);
+                
+                // Still return success but log the email failure
+                // The OTP is still valid and can be used
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'OTP sent successfully to your email address. Please check your email (including spam folder).',
+                'data' => [
+                    'email' => $email,
+                    'expires_in' => 600, // 10 minutes in seconds
+                    'debug_otp' => $otp // Remove this in production - for testing only
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Forgot password failed:', [
+                'error' => $e->getMessage(),
+                'email' => $request->email ?? 'not provided'
+            ]);
+            
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to send OTP',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Verify OTP for password reset
+     */
+    public function verifyOtp(Request $request): JsonResponse
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'email' => 'required|email',
+                'otp' => 'required|string|size:6',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $email = $request->email;
+            $otp = $request->otp;
+            
+            $cacheKey = "password_reset_otp_{$email}";
+            $cachedData = Cache::get($cacheKey);
+
+            if (!$cachedData) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'OTP has expired or is invalid'
+                ], 400);
+            }
+
+            // Check attempts limit
+            if ($cachedData['attempts'] >= 3) {
+                Cache::forget($cacheKey);
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Too many failed attempts. Please request a new OTP'
+                ], 429);
+            }
+
+            // Verify OTP
+            if ($cachedData['otp'] !== $otp) {
+                // Increment attempts
+                $cachedData['attempts']++;
+                Cache::put($cacheKey, $cachedData, 600);
+                
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Invalid OTP'
+                ], 400);
+            }
+
+            // Generate reset token
+            $resetToken = Str::random(60);
+            $resetCacheKey = "password_reset_token_{$resetToken}";
+            
+            // Store reset token for 30 minutes
+            Cache::put($resetCacheKey, [
+                'email' => $email,
+                'user_id' => $cachedData['user_id']
+            ], 1800); // 30 minutes
+
+            // Clear OTP cache
+            Cache::forget($cacheKey);
+
+            Log::info('OTP verified successfully for password reset', [
+                'email' => $email,
+                'user_id' => $cachedData['user_id']
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'OTP verified successfully',
+                'data' => [
+                    'token' => $resetToken,
+                    'expires_in' => 1800 // 30 minutes in seconds
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('OTP verification failed:', [
+                'error' => $e->getMessage(),
+                'email' => $request->email ?? 'not provided'
+            ]);
+            
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to verify OTP',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Resend OTP for password reset
+     */
+    public function resendOtp(Request $request): JsonResponse
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'email' => 'required|email|exists:users,email',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $email = $request->email;
+            
+            // Check if user exists and is active
+            $user = User::where('email', $email)->where('active', true)->first();
+            if (!$user) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'No active account found with this email address'
+                ], 404);
+            }
+
+            // Generate new 6-digit OTP
+            $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            
+            // Store OTP in cache for 10 minutes
+            $cacheKey = "password_reset_otp_{$email}";
+            Cache::put($cacheKey, [
+                'otp' => $otp,
+                'user_id' => $user->id,
+                'attempts' => 0
+            ], 600); // 10 minutes
+
+            // Send OTP via email
+            try {
+                Mail::to($email)->send(new PasswordResetOTP($otp, $user->full_name, 10));
+                
+                Log::info('Password Reset OTP resent via email', [
+                    'email' => $email,
+                    'user_id' => $user->id,
+                    'expires_at' => now()->addMinutes(10)
+                ]);
+            } catch (\Exception $mailException) {
+                Log::error('Failed to resend OTP email', [
+                    'email' => $email,
+                    'error' => $mailException->getMessage()
+                ]);
+                
+                // Still return success but log the email failure
+                // The OTP is still valid and can be used
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'OTP resent successfully to your email address. Please check your email (including spam folder).',
+                'data' => [
+                    'email' => $email,
+                    'expires_in' => 600, // 10 minutes in seconds
+                    'debug_otp' => $otp // Remove this in production - for testing only
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Resend OTP failed:', [
+                'error' => $e->getMessage(),
+                'email' => $request->email ?? 'not provided'
+            ]);
+            
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to resend OTP',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Reset password using token
+     */
+    public function resetPassword(Request $request): JsonResponse
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'email' => 'required|email',
+                'token' => 'required|string',
+                'password' => 'required|string|min:8',
+                'password_confirmation' => 'required|same:password',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $email = $request->email;
+            $token = $request->token;
+            $password = $request->password;
+            
+            $resetCacheKey = "password_reset_token_{$token}";
+            $cachedData = Cache::get($resetCacheKey);
+
+            if (!$cachedData) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Reset token has expired or is invalid'
+                ], 400);
+            }
+
+            // Verify email matches
+            if ($cachedData['email'] !== $email) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Invalid reset token for this email'
+                ], 400);
+            }
+
+            // Get user and update password
+            $user = User::find($cachedData['user_id']);
+            if (!$user) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'User not found'
+                ], 404);
+            }
+
+            // Update password
+            $user->password = Hash::make($password);
+            $user->save();
+
+            // Clear reset token
+            Cache::forget($resetCacheKey);
+
+            // Revoke all existing tokens for security
+            $user->tokens()->delete();
+
+            Log::info('Password reset successfully', [
+                'user_id' => $user->id,
+                'email' => $email
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Password reset successfully. Please login with your new password.',
+                'data' => [
+                    'email' => $email
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Password reset failed:', [
+                'error' => $e->getMessage(),
+                'email' => $request->email ?? 'not provided'
+            ]);
+            
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to reset password',
                 'error' => $e->getMessage()
             ], 500);
         }
