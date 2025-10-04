@@ -163,22 +163,29 @@ Route::get('/table', function () {
     return view('devtest', compact('table'));
 
 });
+// Root route - show login or redirect to admin dashboard
 Route::get('/', function () {
+    if (auth()->check()) {
+        return redirect('/admin/dashboard');
+    }
     return view('auth.login');
 })->name('web.home');
 
-Route::get('/about-us', [FrontEndController::class, 'aboutUs'])->name('web.about_us');
-Route::get('/contact-us', [FrontEndController::class, 'contactUs'])->name('web.contact_us');
-Route::get('/terms-and-conditions', [FrontEndController::class, 'tramsAndCondition'])->name('web.tramsCondition');
-Route::get('/privacy-policy', [FrontEndController::class, 'privacyPolicy'])->name('web.privacyPolicy');
-Route::get('/refund-policy', [FrontEndController::class, 'returnPolicy'])->name('web.returnPolicy');
-Route::post('/contact-us', [FrontEndController::class, 'getInTouch'])->name('web.getInTouch');
+// Protected public routes - redirect to login if not authenticated
+Route::middleware('auth')->group(function () {
+    Route::get('/about-us', [FrontEndController::class, 'aboutUs'])->name('web.about_us');
+    Route::get('/contact-us', [FrontEndController::class, 'contactUs'])->name('web.contact_us');
+    Route::get('/terms-and-conditions', [FrontEndController::class, 'tramsAndCondition'])->name('web.tramsCondition');
+    Route::get('/privacy-policy', [FrontEndController::class, 'privacyPolicy'])->name('web.privacyPolicy');
+    Route::get('/refund-policy', [FrontEndController::class, 'returnPolicy'])->name('web.returnPolicy');
+    Route::post('/contact-us', [FrontEndController::class, 'getInTouch'])->name('web.getInTouch');
 
-Route::get('/blog', [FrontEndController::class, 'blogs'])->name('web.blogs');
-Route::get('/{slug}', [FrontEndController::class, 'post'])->name('web.post');
-Route::get('/category/{slug}', [FrontEndController::class, 'categoryPosts'])->name('web.categoryPosts');
-Route::get('/tag/{slug}', [FrontEndController::class, 'tagPosts'])->name('web.tagPosts');
-Route::get('/author/{slug}', [FrontEndController::class, 'authorPosts'])->name('web.authorPosts');
+    Route::get('/blog', [FrontEndController::class, 'blogs'])->name('web.blogs');
+    Route::get('/{slug}', [FrontEndController::class, 'post'])->name('web.post');
+    Route::get('/category/{slug}', [FrontEndController::class, 'categoryPosts'])->name('web.categoryPosts');
+    Route::get('/tag/{slug}', [FrontEndController::class, 'tagPosts'])->name('web.tagPosts');
+    Route::get('/author/{slug}', [FrontEndController::class, 'authorPosts'])->name('web.authorPosts');
+});
 
 
 Route::group(['middleware' => ['auth', 'role:' . RoleEnum::CUSTOMER], 'prefix' => 'customer'], function () {
@@ -268,6 +275,12 @@ Route::get('test/by/dev', [\App\Http\Controllers\DeveloperTestController::class,
 
 Route::post('payment/{type}', [\App\Http\Controllers\PaymentController::class, 'payNow'])->name("payNow");
 
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+// Redirect /home to admin dashboard
+Route::get('/home', function () {
+    if (auth()->check()) {
+        return redirect('/admin/dashboard');
+    }
+    return redirect('/');
+})->name('home');
 
 

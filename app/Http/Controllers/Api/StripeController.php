@@ -383,6 +383,173 @@ class StripeController extends Controller
         }
     }
 
+    /**
+     * Handle Stripe Webhook Events (RECOMMENDED FOR PRODUCTION)
+     */
+    public function webhook(Request $request)
+    {
+        try {
+            $payload = $request->getContent();
+            $sigHeader = $request->header('Stripe-Signature');
+            $webhookSecret = env('STRIPE_WEBHOOK_SECRET');
+
+            if (!$webhookSecret) {
+                Log::error('Stripe webhook secret not configured');
+                return response()->json(['error' => 'Webhook secret not configured'], 500);
+            }
+
+            // Verify webhook signature
+            try {
+                $event = \Stripe\Webhook::constructEvent(
+                    $payload,
+                    $sigHeader,
+                    $webhookSecret
+                );
+            } catch (\Stripe\Exception\SignatureVerificationException $e) {
+                Log::error('Stripe webhook signature verification failed: ' . $e->getMessage());
+                return response()->json(['error' => 'Invalid signature'], 400);
+            }
+
+            // Handle the event
+            switch ($event->type) {
+                case 'checkout.session.completed':
+                    $session = $event->data->object;
+                    $this->handleCheckoutSessionCompleted($session);
+                    break;
+
+                case 'payment_intent.succeeded':
+                    $paymentIntent = $event->data->object;
+                    Log::info('PaymentIntent succeeded: ' . $paymentIntent->id);
+                    break;
+
+                case 'payment_intent.payment_failed':
+                    $paymentIntent = $event->data->object;
+                    $this->handlePaymentFailed($paymentIntent);
+                    break;
+
+                default:
+                    Log::info('Unhandled Stripe webhook event: ' . $event->type);
+            }
+
+            return response()->json(['status' => 'success']);
+
+        } catch (\Exception $e) {
+            Log::error('Stripe webhook processing failed:', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Handle successful checkout session
+     */
+    private function handleCheckoutSessionCompleted($session)
+    {
+        try {
+            $userId = $session->metadata->user_id ?? null;
+            $orderId = $session->metadata->order_id ?? null;
+            $companyId = $session->metadata->company_id ?? null;
+
+            if (!$userId || !$orderId) {
+                Log::error('Missing metadata in checkout session', ['session_id' => $session->id]);
+                return;
+            }
+
+            Stripe::setApiKey($this->getStripeSecretKey());
+
+            $user = User::find($userId);
+            $order = Order::find($orderId);
+            
+            if (!$user || !$order) {
+                Log::error('User or Order not found', ['user_id' => $userId, 'order_id' => $orderId]);
+                return;
+            }
+
+            $company = $order->company;
+            $paymentIntentId = $session->payment_intent;
+            $paymentIntent = PaymentIntent::retrieve($paymentIntentId);
+            $paymentMethodId = $paymentIntent->payment_method;
+            $paymentMethod = PaymentMethod::retrieve($paymentMethodId);
+
+            // Create transaction record
+            $transaction = new Transition();
+            $transaction->company_id = $company->id;
+            $transaction->user_id = $user->id;
+            $transaction->charge_id = $paymentIntentId;
+            $transaction->status = 'COMPLETED';
+            $transaction->payment_method = 'Stripe';
+            $transaction->receipt_url = $paymentIntent->receipt_url;
+            $transaction->card_type = $paymentMethod->card->brand ?? 'unknown';
+            $transaction->amount = $paymentIntent->amount / 100;
+            $transaction->player_name = $user->first_name . ' ' . $user->last_name;
+            $transaction->save();
+
+            // Update company and order
+            $company->transition_id = $transaction->id;
+            $company->save();
+
+            $order->transition_id = $transaction->id;
+            $order->payment_status = 'COMPLETED';
+            $order->save();
+
+            // Generate temporary login token
+            $tempToken = \Illuminate\Support\Str::random(32);
+            $user->temp_login_token = $tempToken;
+            $user->temp_token_expires_at = now()->addMinutes(30);
+            $user->save();
+
+            // Send email
+            $to = $user->email;
+            $subject = "Steady Formation Access";
+            $password = $user->temp_password;
+
+            Mail::send('email_templates.registration', compact('user', 'password'), function ($message) use ($subject, $to) {
+                $message->from('noreply@funnel.com', env('APP_NAME', 'Steady Formation Access'));
+                $message->to($to);
+                $message->subject($subject);
+            });
+
+            Log::info('Checkout session completed successfully', [
+                'session_id' => $session->id,
+                'user_id' => $userId,
+                'order_id' => $orderId,
+                'transaction_id' => $transaction->id
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to handle checkout session completed:', [
+                'error' => $e->getMessage(),
+                'session_id' => $session->id ?? 'unknown'
+            ]);
+        }
+    }
+
+    /**
+     * Handle failed payment
+     */
+    private function handlePaymentFailed($paymentIntent)
+    {
+        try {
+            Log::warning('Payment failed', [
+                'payment_intent_id' => $paymentIntent->id,
+                'error' => $paymentIntent->last_payment_error->message ?? 'Unknown error'
+            ]);
+
+            // You can add cleanup logic here if needed
+            
+        } catch (\Exception $e) {
+            Log::error('Failed to handle payment failure:', [
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
     public function cancel(Request $request)
     {
         try {
@@ -445,11 +612,14 @@ class StripeController extends Controller
     }
 
     /**
-     * Get Stripe secret key - force test mode in production
+     * Get Stripe secret key based on environment
      */
     private function getStripeSecretKey()
     {
-        // Force test mode in production - use test keys
-        return env('STRIPE_TEST_SECRET', env('STRIPE_SECRET'));
+        // Use live key in production, test key otherwise
+        if (env('APP_ENV') === 'production' && env('STRIPE_LIVE_MODE', false)) {
+            return env('STRIPE_SECRET'); // Live key
+        }
+        return env('STRIPE_TEST_SECRET', env('STRIPE_SECRET')); // Test key
     }
 } 

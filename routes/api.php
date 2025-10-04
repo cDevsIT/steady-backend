@@ -76,6 +76,7 @@ Route::post('/payments/stripe/create-session', [StripeController::class, 'create
 Route::post('/payments/paypal/create-payment', [PayPalController::class, 'createPayment']);
 Route::get('/payments/stripe/success', [StripeController::class, 'success']);
 Route::get('/payments/stripe/cancel', [StripeController::class, 'cancel']);
+Route::post('/payments/stripe/webhook', [StripeController::class, 'webhook']); // Stripe webhook endpoint
 Route::get('/payments/paypal/success', [PayPalController::class, 'success']);
 Route::get('/payments/paypal/cancel', [PayPalController::class, 'cancel']);
 
