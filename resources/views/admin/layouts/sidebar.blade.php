@@ -173,6 +173,15 @@
                 </div>
             </li>
 
+            <!-- Wallet Management -->
+            <li class="nav-item">
+                <a href="{{route('admin.wallets.index')}}" 
+                   class="nav-link {{ session('lsbsm') == 'wallets' ? 'active' : '' }}">
+                    <i class="nav-icon fas fa-wallet"></i>
+                    <span class="nav-content">Wallet Management</span>
+                </a>
+            </li>
+
             <!-- Try to Register -->
             <li class="nav-item">
                 <a href="{{route('admin.try_to_register_list')}}" 

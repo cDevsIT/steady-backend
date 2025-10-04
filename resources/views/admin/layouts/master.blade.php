@@ -279,7 +279,6 @@
             margin-top: var(--header-height);
             min-height: calc(100vh - var(--header-height));
             transition: all 0.3s ease;
-            padding: 2rem;
         }
 
         .modern-content.collapsed {

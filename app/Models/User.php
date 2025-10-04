@@ -97,4 +97,20 @@ class User extends Authenticatable
     public function posts(){
         return $this->hasMany(Blog::class, 'addedBy');
     }
+
+    /**
+     * Get the wallet associated with the user.
+     */
+    public function wallet()
+    {
+        return $this->hasOne(Wallet::class);
+    }
+
+    /**
+     * Get all wallets associated with the user.
+     */
+    public function wallets()
+    {
+        return $this->hasMany(Wallet::class);
+    }
 }

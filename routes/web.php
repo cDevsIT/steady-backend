@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\TransitionsController;
 use App\Http\Controllers\Admin\StateFeeController;
 use App\Http\Controllers\Admin\WebsiteSettingController;
 use App\Http\Controllers\Admin\CompanyOwnerController;
+use App\Http\Controllers\Admin\WalletController;
 use App\Http\Controllers\RenewalController;
 use App\Enums\RoleEnum;
 use Illuminate\Support\Facades\Response;
@@ -237,6 +238,17 @@ Route::group(['middleware' => ['auth', 'role:' . RoleEnum::ADMIN], 'prefix' => '
     Route::resource('tickets', \App\Http\Controllers\Admin\TicketController::class)->names('tickets');
     // Tickets - Admin create
     Route::post('/tickets/admin-create', [\App\Http\Controllers\Admin\TicketController::class, 'adminStore'])->name('tickets.adminStore');
+    
+    // Wallet Management Routes
+    Route::get('/wallets', [WalletController::class, 'index'])->name('admin.wallets.index');
+    Route::post('/wallets', [WalletController::class, 'store'])->name('admin.wallets.store');
+    Route::get('/wallets/{wallet}', [WalletController::class, 'show'])->name('admin.wallets.show');
+    Route::put('/wallets/{wallet}', [WalletController::class, 'update'])->name('admin.wallets.update');
+    Route::get('/wallets/{wallet}/transactions', [WalletController::class, 'transactions'])->name('admin.wallets.transactions');
+    Route::get('/wallets/{wallet}/activity-log', [WalletController::class, 'activityLog'])->name('admin.wallets.activityLog');
+    Route::post('/wallets/{wallet}/adjust-balance', [WalletController::class, 'adjustBalance'])->name('admin.wallets.adjustBalance');
+    Route::post('/wallets/{wallet}/toggle-freeze', [WalletController::class, 'toggleFreeze'])->name('admin.wallets.toggleFreeze');
+    
     Route::get('try-to-register-list', [\App\Http\Controllers\Admin\PrimaryContactController::class, 'index'])->name('admin.try_to_register_list');
 });
 
