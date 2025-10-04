@@ -29,28 +29,28 @@
                     <div class="card-header bg-white border-0 py-3">
                         <h5 class="mb-0 fw-bold text-dark">Wallet Information</h5>
                     </div>
-                    <div class="card-body p-4 text-center">
-                        <div class="mb-4">
-                            <div class="avatar-circle mx-auto" style="width: 100px; height: 100px; background: linear-gradient(135deg, #A8B7E5 0%, #9FA6D6 100%); color: white; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-weight: bold; font-size: 36px;">
+                    <div class="card-body p-3 text-center">
+                        <div class="mb-3">
+                            <div class="avatar-circle mx-auto" style="width: 80px; height: 80px; background: linear-gradient(135deg, #A8B7E5 0%, #9FA6D6 100%); color: white; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-weight: bold; font-size: 28px;">
                                 {{strtoupper(substr($wallet->user->first_name, 0, 1))}}{{strtoupper(substr($wallet->user->last_name, 0, 1))}}
                             </div>
                         </div>
-                        <h4 class="fw-bold mb-1">{{ $wallet->user->first_name }} {{ $wallet->user->last_name }}</h4>
-                        <p class="text-muted mb-4">{{ $wallet->user->email }}</p>
+                        <h5 class="fw-bold mb-1">{{ $wallet->user->first_name }} {{ $wallet->user->last_name }}</h5>
+                        <p class="text-muted mb-3 small">{{ $wallet->user->email }}</p>
 
-                        <div class="mb-3 py-3 border-top">
+                        <div class="mb-0 py-2 border-top">
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span class="text-muted">Wallet ID:</span>
-                                <span class="fw-semibold">{{ $wallet->id }}</span>
+                                <small class="text-muted">Wallet ID:</small>
+                                <small class="fw-semibold">{{ $wallet->id }}</small>
                             </div>
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span class="text-muted">Type:</span>
+                                <small class="text-muted">Type:</small>
                                 <span class="badge rounded-pill {{ $wallet->type == 'Personal' ? 'bg-primary' : 'bg-info' }}">
                                     {{ $wallet->type }}
                                 </span>
                             </div>
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span class="text-muted">Status:</span>
+                                <small class="text-muted">Status:</small>
                                 @if($wallet->status === 'Active')
                                     <span class="badge bg-success-subtle text-success rounded-pill">Active</span>
                                 @else
@@ -58,26 +58,22 @@
                                 @endif
                             </div>
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span class="text-muted">Currency:</span>
-                                <span class="fw-semibold">{{ $wallet->currency }}</span>
+                                <small class="text-muted">Currency:</small>
+                                <small class="fw-semibold">{{ $wallet->currency }}</small>
                             </div>
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span class="text-muted">Created:</span>
-                                <span class="fw-semibold">{{ \Carbon\Carbon::parse($wallet->created_at)->format('M d, Y') }}</span>
-                            </div>
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span class="text-muted"></span>
-                                <small class="text-muted">{{ \Carbon\Carbon::parse($wallet->created_at)->format('h:i A') }}</small>
+                                <small class="text-muted">Created:</small>
+                                <small class="fw-semibold">{{ \Carbon\Carbon::parse($wallet->created_at)->format('M d, Y h:i A') }}</small>
                             </div>
                             <div class="d-flex justify-content-between align-items-center">
-                                <span class="text-muted">Last Activity:</span>
-                                <span class="fw-semibold">
+                                <small class="text-muted">Last Activity:</small>
+                                <small class="fw-semibold">
                                     @if($wallet->last_activity_at)
                                         {{ \Carbon\Carbon::parse($wallet->last_activity_at)->diffForHumans() }}
                                     @else
                                         No activity
                                     @endif
-                                </span>
+                                </small>
                             </div>
                         </div>
                     </div>
@@ -91,28 +87,28 @@
                     <div class="card-header bg-white border-0 py-3">
                         <h5 class="mb-0 fw-bold text-dark">Balance Information</h5>
                     </div>
-                    <div class="card-body p-4">
-                        <div class="text-center mb-4 pb-4 border-bottom">
-                            <h2 class="display-5 fw-bold mb-2">${{ number_format($wallet->balance, 2) }}</h2>
-                            <p class="text-muted mb-0">Current Balance</p>
+                    <div class="card-body p-3">
+                        <div class="text-center mb-3 pb-3 border-bottom">
+                            <h2 class="display-6 fw-bold mb-1">${{ number_format($wallet->balance, 2) }}</h2>
+                            <p class="text-muted mb-0 small">Current Balance</p>
                         </div>
-                        <div class="row g-3">
+                        <div class="row g-2">
                             <div class="col-md-4">
-                                <div class="text-center p-3 bg-success-subtle rounded">
-                                    <h5 class="text-success fw-bold mb-1">${{ number_format($totalDeposits, 2) }}</h5>
-                                    <small class="text-muted">Total<br>Deposits</small>
+                                <div class="text-center p-2 bg-success-subtle rounded">
+                                    <h6 class="text-success fw-bold mb-0">${{ number_format($totalDeposits, 2) }}</h6>
+                                    <small class="text-muted" style="font-size: 0.7rem;">Total Deposits</small>
                                 </div>
                             </div>
                             <div class="col-md-4">
-                                <div class="text-center p-3 bg-danger-subtle rounded">
-                                    <h5 class="text-danger fw-bold mb-1">${{ number_format($totalWithdrawals, 2) }}</h5>
-                                    <small class="text-muted">Total<br>Withdrawals</small>
+                                <div class="text-center p-2 bg-danger-subtle rounded">
+                                    <h6 class="text-danger fw-bold mb-0">${{ number_format($totalWithdrawals, 2) }}</h6>
+                                    <small class="text-muted" style="font-size: 0.7rem;">Total Withdrawals</small>
                                 </div>
                             </div>
                             <div class="col-md-4">
-                                <div class="text-center p-3 bg-info-subtle rounded">
-                                    <h5 class="text-info fw-bold mb-1">${{ number_format($totalAdjustments, 2) }}</h5>
-                                    <small class="text-muted">Total<br>Adjustments</small>
+                                <div class="text-center p-2 bg-info-subtle rounded">
+                                    <h6 class="text-info fw-bold mb-0">${{ number_format($totalAdjustments, 2) }}</h6>
+                                    <small class="text-muted" style="font-size: 0.7rem;">Total Adjustments</small>
                                 </div>
                             </div>
                         </div>
@@ -121,38 +117,38 @@
 
                 <!-- Quick Actions Card -->
                 <div class="card border-0 shadow-sm mb-4">
-                    <div class="card-header bg-white border-0 py-3">
+                    <div class="card-header bg-white border-0 py-3 pb-2">
                         <h5 class="mb-0 fw-bold text-dark">Quick Actions</h5>
                     </div>
-                    <div class="card-body p-4">
-                        <div class="row g-3">
-                            <div class="col-md-3">
-                                <button type="button" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#adjustBalanceModal">
-                                    <i class="fas fa-edit me-2"></i>Adjust Balance
+                    <div class="card-body p-3">
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <button type="button" class="btn btn-primary btn-sm w-100" data-bs-toggle="modal" data-bs-target="#adjustBalanceModal">
+                                    <i class="fas fa-edit me-1"></i>Adjust Balance
                                 </button>
                             </div>
-                            <div class="col-md-3">
-                                <button type="button" class="btn btn-outline-info w-100" data-bs-toggle="modal" data-bs-target="#editWalletModal">
-                                    <i class="fas fa-cog me-2"></i>Edit Wallet
+                            <div class="col-md-4">
+                                <button type="button" class="btn btn-outline-info btn-sm w-100" data-bs-toggle="modal" data-bs-target="#editWalletModal">
+                                    <i class="fas fa-cog me-1"></i>Edit Wallet
                                 </button>
                             </div>
-                            <div class="col-md-3">
-                                <a href="{{ route('admin.wallets.transactions', $wallet->id) }}" class="btn btn-outline-primary w-100">
-                                    <i class="fas fa-list me-2"></i>Transactions
-                                </a>
-                            </div>
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <form action="{{ route('admin.wallets.toggleFreeze', $wallet->id) }}" method="POST">
                                     @csrf
-                                    <button type="submit" class="btn {{ $wallet->status === 'Frozen' ? 'btn-success' : 'btn-warning' }} w-100">
-                                        <i class="fas fa-{{ $wallet->status === 'Frozen' ? 'unlock' : 'snowflake' }} me-2"></i>
-                                        {{ $wallet->status === 'Frozen' ? 'Unfreeze' : 'Freeze' }} Wallet
+                                    <button type="submit" class="btn btn-sm {{ $wallet->status === 'Frozen' ? 'btn-success' : 'btn-warning' }} w-100">
+                                        <i class="fas fa-{{ $wallet->status === 'Frozen' ? 'unlock' : 'snowflake' }} me-1"></i>
+                                        {{ $wallet->status === 'Frozen' ? 'Unfreeze Wallet' : 'Freeze Wallet' }}
                                     </button>
                                 </form>
                             </div>
-                            <div class="col-md-12">
-                                <a href="{{ route('admin.wallets.activityLog', $wallet->id) }}" class="btn btn-outline-secondary w-100">
-                                    <i class="fas fa-history me-2"></i>Activity Log
+                            <div class="col-md-6">
+                                <a href="{{ route('admin.wallets.transactions', $wallet->id) }}" class="btn btn-outline-primary btn-sm w-100">
+                                    <i class="fas fa-list me-1"></i>View Transactions
+                                </a>
+                            </div>
+                            <div class="col-md-6">
+                                <a href="{{ route('admin.wallets.activityLog', $wallet->id) }}" class="btn btn-outline-secondary btn-sm w-100">
+                                    <i class="fas fa-history me-1"></i>Activity Log
                                 </a>
                             </div>
                         </div>
@@ -163,33 +159,33 @@
 
         <!-- Activity Summary Card -->
         <div class="card border-0 shadow-sm mb-4">
-            <div class="card-header bg-white border-0 py-3">
+            <div class="card-header bg-white border-0 py-3 pb-2">
                 <h5 class="mb-0 fw-bold text-dark">Activity Summary</h5>
             </div>
-            <div class="card-body p-4">
-                <div class="row g-4">
+            <div class="card-body p-3">
+                <div class="row g-3">
                     <div class="col-md-3">
-                        <div class="text-center p-3 border rounded">
-                            <h3 class="fw-bold mb-1">{{ $totalTransactions }}</h3>
-                            <small class="text-muted">Total Transactions</small>
+                        <div class="text-center p-2 border rounded">
+                            <h4 class="fw-bold mb-0">{{ $totalTransactions }}</h4>
+                            <small class="text-muted" style="font-size: 0.75rem;">Total Transactions</small>
                         </div>
                     </div>
                     <div class="col-md-3">
-                        <div class="text-center p-3 border rounded">
-                            <h3 class="fw-bold mb-1">{{ $totalTransfers }}</h3>
-                            <small class="text-muted">Total Transfers</small>
+                        <div class="text-center p-2 border rounded">
+                            <h4 class="fw-bold mb-0">{{ $totalTransfers }}</h4>
+                            <small class="text-muted" style="font-size: 0.75rem;">Total Transfers</small>
                         </div>
                     </div>
                     <div class="col-md-3">
-                        <div class="text-center p-3 border rounded">
-                            <h3 class="text-danger fw-bold mb-1">${{ number_format($totalFees, 2) }}</h3>
-                            <small class="text-muted">Total Fees</small>
+                        <div class="text-center p-2 border rounded">
+                            <h4 class="text-danger fw-bold mb-0">${{ number_format($totalFees, 2) }}</h4>
+                            <small class="text-muted" style="font-size: 0.75rem;">Total Fees</small>
                         </div>
                     </div>
                     <div class="col-md-3">
-                        <div class="text-center p-3 border rounded">
-                            <h3 class="text-info fw-bold mb-1">${{ number_format($totalAdjustments, 2) }}</h3>
-                            <small class="text-muted">Total Adjustments</small>
+                        <div class="text-center p-2 border rounded">
+                            <h4 class="text-info fw-bold mb-0">${{ number_format($totalAdjustments, 2) }}</h4>
+                            <small class="text-muted" style="font-size: 0.75rem;">Total Adjustments</small>
                         </div>
                     </div>
                 </div>

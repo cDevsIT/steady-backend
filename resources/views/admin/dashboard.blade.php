@@ -11,6 +11,7 @@
 
 @section('content')
     <!-- Modern Page Header -->
+    <div class="container-fluid px-4">
     <div class="page-header-modern mb-4">
         <div class="d-flex justify-content-between align-items-center">
             <div>
@@ -216,6 +217,7 @@
         <div class="card-body">
             <div id="chart" style="width: 100%; height: 400px;"></div>
         </div>
+    </div>
     </div>
 @endsection
 
