@@ -9,6 +9,19 @@ use Illuminate\Database\Eloquent\Model;
 class Transition extends Model
 {
     use HasFactory;
+
+    protected $fillable = [
+        'user_id',
+        'company_id',
+        'charge_id',
+        'status',
+        'payment_method',
+        'receipt_url',
+        'card_type',
+        'amount',
+        'player_name',
+    ];
+
     public function getAttribute($key)
     {
         if ($key === 'created_at') {

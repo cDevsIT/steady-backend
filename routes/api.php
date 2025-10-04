@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\DocumentsController;
 use App\Http\Controllers\Api\TicketsController;
 use App\Http\Controllers\Api\TransitionsController as ApiTransitionsController;
 use App\Http\Controllers\Api\OwnerDocumentsController;
+use App\Http\Controllers\Api\WalletController;
 
 /*
 |--------------------------------------------------------------------------
@@ -126,6 +127,15 @@ Route::middleware('auth:sanctum')->prefix('tickets')->group(function () {
 Route::prefix('payments')->group(function () {
     // Public read endpoint (expects company_id or user_id); no design change required on frontend
     Route::get('/history', [ApiTransitionsController::class, 'getUserTransitions']);
+});
+
+// Wallet routes
+Route::prefix('wallet')->group(function () {
+    // Get wallet balance (requires authentication)
+    Route::middleware('auth:sanctum')->get('/balance', [WalletController::class, 'getBalance']);
+    
+    // Process wallet payment (requires authentication)
+    Route::middleware('auth:sanctum')->post('/process-payment', [WalletController::class, 'processWalletPayment']);
 });
 
 
