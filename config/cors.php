@@ -19,15 +19,21 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://localhost:3000', 'http://localhost:8000', 'https://steadyformation.com', 'https://app.steadyformation.com'],
+    'allowed_origins' => [
+        'http://localhost:3000', 
+        'http://localhost:8000', 
+        'https://steadyformation.com',
+        'https://www.steadyformation.com',
+        'https://app.steadyformation.com',
+    ],
 
     'allowed_origins_patterns' => [],
 
     'allowed_headers' => ['*'],
 
-    'exposed_headers' => [],
+    'exposed_headers' => ['*'],
 
-    'max_age' => 0,
+    'max_age' => 86400,
 
     'supports_credentials' => true,
 

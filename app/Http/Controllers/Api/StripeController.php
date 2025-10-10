@@ -152,6 +152,9 @@ class StripeController extends Controller
 
             Stripe::setApiKey($this->getStripeSecretKey());
             
+            // Get logo URL for branding
+            $logoUrl = $this->getLogoUrl();
+            
             $checkout_session = Session::create([
                 'payment_method_types' => ['card'],
                 'line_items' => $line_items,
@@ -162,6 +165,12 @@ class StripeController extends Controller
                     'user_id' => $result['user_id'],
                     'company_id' => $result['company_id'],
                     'order_id' => $order->id,
+                ],
+                // Add branding with logo at the top of checkout page
+                'custom_text' => [
+                    'submit' => [
+                        'message' => 'Complete your company formation payment securely.',
+                    ],
                 ],
             ]);
 
@@ -621,5 +630,16 @@ class StripeController extends Controller
             return env('STRIPE_SECRET'); // Live key
         }
         return env('STRIPE_TEST_SECRET', env('STRIPE_SECRET')); // Test key
+    }
+
+    /**
+     * Get logo URL for Stripe checkout
+     */
+    private function getLogoUrl()
+    {
+        // Construct full URL for the logo
+        // Stripe requires a publicly accessible HTTPS URL
+        $appUrl = rtrim(env('APP_URL', 'http://localhost:8000'), '/');
+        return $appUrl . '/assets/images/logo.png';
     }
 } 

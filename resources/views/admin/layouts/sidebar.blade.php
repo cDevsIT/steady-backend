@@ -182,6 +182,15 @@
                 </a>
             </li>
 
+            <!-- Single Services -->
+            <li class="nav-item">
+                <a href="{{route('admin.services.index')}}" 
+                   class="nav-link {{ session('lsbsm') == 'services' ? 'active' : '' }}">
+                    <i class="nav-icon fas fa-cogs"></i>
+                    <span class="nav-content">Single Services</span>
+                </a>
+            </li>
+
             <!-- Try to Register -->
             <li class="nav-item">
                 <a href="{{route('admin.try_to_register_list')}}" 

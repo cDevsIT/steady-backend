@@ -341,26 +341,6 @@
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
         }
 
-        .stats-card.success {
-            border-left: 4px solid var(--success-color);
-        }
-
-        .stats-card.warning {
-            border-left: 4px solid var(--warning-color);
-        }
-
-        .stats-card.danger {
-            border-left: 4px solid var(--danger-color);
-        }
-
-        .stats-card.info {
-            border-left: 4px solid var(--info-color);
-        }
-
-        .stats-card.secondary {
-            border-left: 4px solid var(--secondary-color);
-        }
-
         .stats-icon {
             color: var(--primary-color);
         }

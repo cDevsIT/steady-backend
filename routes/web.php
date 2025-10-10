@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\StateFeeController;
 use App\Http\Controllers\Admin\WebsiteSettingController;
 use App\Http\Controllers\Admin\CompanyOwnerController;
 use App\Http\Controllers\Admin\WalletController;
+use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\RenewalController;
 use App\Enums\RoleEnum;
 use Illuminate\Support\Facades\Response;
@@ -250,6 +251,11 @@ Route::group(['middleware' => ['auth', 'role:' . RoleEnum::ADMIN], 'prefix' => '
     Route::post('/wallets/{wallet}/toggle-freeze', [WalletController::class, 'toggleFreeze'])->name('admin.wallets.toggleFreeze');
     
     Route::get('try-to-register-list', [\App\Http\Controllers\Admin\PrimaryContactController::class, 'index'])->name('admin.try_to_register_list');
+    
+    // Single Services Routes
+    Route::resource('services', ServiceController::class)->names('admin.services');
+    Route::post('/services/{service}/toggle-status', [ServiceController::class, 'toggleStatus'])->name('admin.services.toggleStatus');
+    Route::post('/services/{service}/toggle-visibility', [ServiceController::class, 'toggleVisibility'])->name('admin.services.toggleVisibility');
 });
 
 //Stripe Payment Getaway
