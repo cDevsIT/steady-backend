@@ -439,96 +439,12 @@
     
     .search-clear-modern {
         height: 24px;
-        line-height: 24px;
+        line-height: 3px;
+        position: absolute;
+        right: 8px;
+        top: 11px;
     }
     
-    /* Fix dropdown menu overflow and positioning */
-    .dropdown-menu {
-        position: fixed !important;
-        z-index: 1055 !important;
-        max-height: none !important;
-        overflow: visible !important;
-        transform: none !important;
-    }
-    
-    /* Ensure page-level scrolling */
-    body {
-        overflow-x: hidden;
-        overflow-y: auto;
-    }
-    
-    .container-fluid {
-        overflow: visible;
-    }
-    
-    /* Fix table responsive to prevent dropdown scrollbar issues */
-    .table-responsive {
-        overflow-x: auto;
-        overflow-y: visible !important;
-        position: relative;
-    }
-    
-    /* Remove any height restrictions that might cause internal scrolling */
-    .card {
-        overflow: visible;
-    }
-    
-    .card-body {
-        overflow: visible !important;
-    }
-    
-    /* Fix action dropdown positioning */
-    .dropdown {
-        position: static;
-    }
-    
-    /* Ensure dropdown doesn't create table scrollbars */
-    .table-responsive .dropdown-menu {
-        position: fixed !important;
-        z-index: 1055 !important;
-        transform: none !important;
-    }
-    
-    /* Override Bootstrap dropdown positioning */
-    .dropdown-menu.show {
-        position: fixed !important;
-        z-index: 1055 !important;
-        display: block;
-        min-width: 10rem;
-        padding: 0.5rem 0;
-        margin: 0;
-        font-size: 1rem;
-        color: #212529;
-        text-align: left;
-        list-style: none;
-        background-color: #fff;
-        background-clip: padding-box;
-        border: 1px solid rgba(0,0,0,.15);
-        border-radius: 0.375rem;
-        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.175);
-        transform: none !important;
-    }
-    
-    /* Ensure dropdown items don't create internal scroll */
-    .dropdown-item {
-        display: block;
-        width: 100%;
-        padding: 0.25rem 1rem;
-        clear: both;
-        font-weight: 400;
-        color: #212529;
-        text-align: inherit;
-        text-decoration: none;
-        white-space: nowrap;
-        background-color: transparent;
-        border: 0;
-    }
-    
-    .dropdown-item:hover,
-    .dropdown-item:focus {
-        color: #1e2125;
-        background-color: #e9ecef;
-    }
 </style>
 @endpush
 
@@ -854,39 +770,6 @@
         resetAllFilters();
     }
     
-    // Fix dropdown positioning to prevent table scrollbars
-    document.addEventListener('DOMContentLoaded', function() {
-        // Handle dropdown positioning
-        document.addEventListener('show.bs.dropdown', function(e) {
-            const dropdown = e.target;
-            const dropdownMenu = dropdown.querySelector('.dropdown-menu');
-            const button = dropdown.querySelector('[data-bs-toggle="dropdown"]');
-            
-            if (dropdownMenu && button) {
-                // Get button position
-                const buttonRect = button.getBoundingClientRect();
-                
-                // Position dropdown menu
-                dropdownMenu.style.position = 'fixed';
-                dropdownMenu.style.top = (buttonRect.bottom + window.scrollY) + 'px';
-                dropdownMenu.style.left = (buttonRect.left + window.scrollX) + 'px';
-                dropdownMenu.style.zIndex = '1055';
-                dropdownMenu.style.transform = 'none';
-            }
-        });
-        
-        // Handle dropdown hide
-        document.addEventListener('hide.bs.dropdown', function(e) {
-            const dropdownMenu = e.target.querySelector('.dropdown-menu');
-            if (dropdownMenu) {
-                dropdownMenu.style.position = '';
-                dropdownMenu.style.top = '';
-                dropdownMenu.style.left = '';
-                dropdownMenu.style.zIndex = '';
-                dropdownMenu.style.transform = '';
-            }
-        });
-    });
     
     // Event listeners
     searchInput.addEventListener('input', performSearch);

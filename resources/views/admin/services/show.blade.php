@@ -44,11 +44,11 @@
                             </div>
                             <div class="text-center">
                                 <small class="text-muted mb-1">Renewal Period</small>
-                                <div class="fw-semibold">12 months</div>
+                                <div class="fw-semibold">{{ $service->renewal_period ?? 12 }} months</div>
                             </div>
                             <div class="text-center">
                                 <small class="text-muted mb-1">Auto Renewal</small>
-                                <span class="badge bg-secondary">{{ $service->auto_renewal ? 'Enabled' : 'Disabled' }}</span>
+                                <div class="fw-semibold">{{ $service->auto_renewal ? 'Enabled' : 'Disabled' }}</div>
                             </div>
                         </div>
                 </div>
@@ -244,24 +244,33 @@
 
 @push('css')
 <style>
-    /* Custom styling to match screenshot */
+    /* Light, clean styling */
+    body {
+        background-color: #f8f9fa;
+    }
+    
     .card {
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        border: 1px solid #e9ecef;
+        background-color: #ffffff;
     }
     
     .card-header {
-        border-bottom: 1px solid #f0f0f0;
+        border-bottom: 1px solid #f1f3f4;
+        background-color: #fafbfc;
     }
     
     .badge {
-        border-radius: 20px;
-        font-weight: 400;
-        font-size: 0.85rem;
+        border-radius: 16px;
+        font-weight: 500;
+        font-size: 0.8rem;
+        padding: 0.4rem 0.8rem;
     }
     
     .list-group-item {
-        border-bottom: 1px solid #f8f9fa;
+        border-bottom: 1px solid #f5f6f7;
+        background-color: transparent;
     }
     
     .list-group-item:last-child {
@@ -276,6 +285,7 @@
     .service-form-item {
         transition: all 0.2s ease;
         cursor: pointer;
+        border-radius: 6px;
     }
     
     .service-form-item:hover {
@@ -283,23 +293,26 @@
         transform: translateX(2px);
     }
     
-    /* Typography improvements - smaller, cleaner fonts */
+    /* Typography - light and clean */
     .card-title-modern {
-        font-weight: 500 !important;
+        font-weight: 600 !important;
         font-size: 1rem;
         color: #495057;
     }
     
     .fw-semibold {
         font-weight: 500 !important;
+        color: #343a40;
     }
     
     .fw-bold {
         font-weight: 600 !important;
+        color: #2c3e50;
     }
     
     h5, h6 {
-        font-weight: 500 !important;
+        font-weight: 600 !important;
+        color: #495057;
     }
     
     .text-muted {
@@ -307,48 +320,85 @@
         color: #6c757d !important;
     }
     
-    /* Button styling - smaller and less colorful */
+    /* Light button styling */
     .btn-outline-secondary {
-        font-weight: 400;
+        font-weight: 500;
         border-width: 1px;
         transition: all 0.2s ease;
         font-size: 0.875rem;
+        border-color: #dee2e6;
+        color: #6c757d;
     }
     
     .btn-outline-secondary:hover {
+        background-color: #f8f9fa;
+        border-color: #adb5bd;
+        color: #495057;
         transform: translateY(-1px);
-        box-shadow: 0 2px 4px rgba(108,117,125,0.2);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
+
     
     /* Smaller text sizes */
     small {
-        font-size: 0.875rem;
+        font-size: 0.85rem;
+        color: #6c757d;
     }
     
     .badge {
         font-size: 0.75rem;
     }
     
-    /* Badge colors matching screenshot */
-    .bg-primary {
-        background-color: #007bff !important;
-    }
-    
+    /* Light badge colors */
     .bg-success {
-        background-color: #28a745 !important;
+        background-color: #d4edda !important;
+        color: #155724 !important;
+        border: 1px solid #c3e6cb;
     }
     
     .bg-warning {
-        background-color: #ffc107 !important;
-        color: #212529 !important;
+        background-color: #fff3cd !important;
+        color: #856404 !important;
+        border: 1px solid #ffeaa7;
     }
     
     .bg-secondary {
-        background-color: #6c757d !important;
+        background-color: #e9ecef !important;
+        color: #495057 !important;
+        border: 1px solid #dee2e6;
     }
     
-    .bg-dark {
-        background-color: #343a40 !important;
+    .bg-primary {
+        background-color: #e3f2fd !important;
+        color: #1976d2 !important;
+        border: 1px solid #bbdefb;
+    }
+    
+    .bg-info {
+        background-color: #d1ecf1 !important;
+        color: #0c5460 !important;
+        border: 1px solid #bee5eb;
+    }
+    
+    /* Light page header */
+    .page-header-modern {
+        background-color: transparent;
+    }
+    
+    .page-title-modern {
+        color: #2c3e50;
+        font-weight: 700;
+    }
+    
+    .page-subtitle-modern {
+        color: #6c757d;
+        font-weight: 400;
+    }
+    
+    /* Light status badge */
+    .badge.fs-6 {
+        font-size: 0.9rem !important;
+        padding: 0.6rem 1.2rem;
     }
     
     /* Print styles */
@@ -365,141 +415,138 @@
         body {
             font-size: 12pt;
             line-height: 1.4;
+            background-color: white !important;
         }
     }
 </style>
 @endpush
 
 @push('js')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
     function printServiceDetails() {
-        // Create a new window for printing
-        const printWindow = window.open('', '_blank');
-        
-        // Get the service data
+        // Get service data
         const serviceData = {
             name: '{{ $service->name }}',
-            description: '{{ $service->description }}',
+            description: '{{ addslashes($service->description) }}',
             status: '{{ $service->status }}',
             initialPrice: '{{ number_format($service->initial_price, 2) }}',
             renewalFee: '{{ number_format($service->renewal_fee, 2) }}',
             transferFee: '{{ number_format($service->transfer_fee, 2) }}',
+            renewalPeriod: '{{ $service->renewal_period ?? 12 }}',
+            autoRenewal: '{{ $service->auto_renewal ? "Enabled" : "Disabled" }}',
             isTransferable: '{{ $service->is_transferable ? "Yes" : "No" }}',
             isRenewable: '{{ $service->is_renewable ? "Yes" : "No" }}',
             requiresStateFees: '{{ $service->requires_state_fees ? "Yes" : "No" }}',
             visibleOnFunnel: '{{ $service->visible_on_funnel ? "Yes" : "No" }}',
+            requiresStateSelection: '{{ $service->requires_state_selection ? "Yes" : "No" }}',
             createdDate: '{{ $service->created_at->format("M d, Y h:i A") }}',
             updatedDate: '{{ $service->updated_at->format("M d, Y h:i A") }}'
         };
+
+        // Create PDF
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
         
-        // Create print content
-        const printContent = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Service Details - ${serviceData.name}</title>
-                <style>
-                    body { font-family: Arial, sans-serif; margin: 20px; }
-                    .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 10px; }
-                    .section { margin-bottom: 20px; }
-                    .section h3 { color: #333; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
-                    .info-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
-                    .label { font-weight: 500; }
-                    .value { font-weight: 400; }
-                    .badge { padding: 2px 8px; border-radius: 4px; font-size: 12px; }
-                    .badge-success { background-color: #28a745; color: white; }
-                    .badge-warning { background-color: #ffc107; color: #212529; }
-                    .badge-secondary { background-color: #6c757d; color: white; }
-                    .badge-primary { background-color: #007bff; color: white; }
-                    @media print { body { margin: 0; } }
-                </style>
-            </head>
-            <body>
-                <div class="header">
-                    <h1>Service Details</h1>
-                    <h2>${serviceData.name}</h2>
-                </div>
-                
-                <div class="section">
-                    <h3>Basic Information</h3>
-                    <div class="info-row">
-                        <span class="label">Service Name:</span>
-                        <span class="value">${serviceData.name}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="label">Status:</span>
-                        <span class="value"><span class="badge badge-success">${serviceData.status}</span></span>
-                    </div>
-                    <div class="info-row">
-                        <span class="label">Description:</span>
-                        <span class="value">${serviceData.description || 'No description provided'}</span>
-                    </div>
-                </div>
-                
-                <div class="section">
-                    <h3>Pricing Information</h3>
-                    <div class="info-row">
-                        <span class="label">Initial Price:</span>
-                        <span class="value">$${serviceData.initialPrice}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="label">Renewal Fee:</span>
-                        <span class="value">$${serviceData.renewalFee}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="label">Transfer Fee:</span>
-                        <span class="value">$${serviceData.transferFee}</span>
-                    </div>
-                </div>
-                
-                <div class="section">
-                    <h3>Service Properties</h3>
-                    <div class="info-row">
-                        <span class="label">Transferable:</span>
-                        <span class="value"><span class="badge ${serviceData.isTransferable === 'Yes' ? 'badge-primary' : 'badge-secondary'}">${serviceData.isTransferable}</span></span>
-                    </div>
-                    <div class="info-row">
-                        <span class="label">Renewable:</span>
-                        <span class="value"><span class="badge ${serviceData.isRenewable === 'Yes' ? 'badge-primary' : 'badge-secondary'}">${serviceData.isRenewable}</span></span>
-                    </div>
-                    <div class="info-row">
-                        <span class="label">Requires State Fees:</span>
-                        <span class="value"><span class="badge ${serviceData.requiresStateFees === 'Yes' ? 'badge-warning' : 'badge-secondary'}">${serviceData.requiresStateFees}</span></span>
-                    </div>
-                    <div class="info-row">
-                        <span class="label">Visible on Funnel:</span>
-                        <span class="value"><span class="badge ${serviceData.visibleOnFunnel === 'Yes' ? 'badge-primary' : 'badge-secondary'}">${serviceData.visibleOnFunnel}</span></span>
-                    </div>
-                </div>
-                
-                <div class="section">
-                    <h3>Timestamps</h3>
-                    <div class="info-row">
-                        <span class="label">Created Date:</span>
-                        <span class="value">${serviceData.createdDate}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="label">Last Updated:</span>
-                        <span class="value">${serviceData.updatedDate}</span>
-                    </div>
-                </div>
-                
-                <div style="margin-top: 30px; text-align: center; font-size: 12px; color: #666;">
-                    Generated on ${new Date().toLocaleString()}
-                </div>
-            </body>
-            </html>
-        `;
+        // Set font
+        doc.setFont("helvetica");
         
-        // Write content and print
-        printWindow.document.write(printContent);
-        printWindow.document.close();
+        // Title
+        doc.setFontSize(20);
+        doc.setTextColor(40, 40, 40);
+        doc.text('Service Details', 20, 30);
         
-        // Wait for content to load then print
-        printWindow.onload = function() {
-            printWindow.print();
-            printWindow.close();
-        };
+        // Service Name
+        doc.setFontSize(16);
+        doc.setTextColor(60, 60, 60);
+        doc.text(serviceData.name, 20, 50);
+        
+        // Line separator
+        doc.setDrawColor(200, 200, 200);
+        doc.line(20, 60, 190, 60);
+        
+        let yPosition = 80;
+        
+        // Basic Information Section
+        doc.setFontSize(14);
+        doc.setTextColor(40, 40, 40);
+        doc.text('Basic Information', 20, yPosition);
+        yPosition += 15;
+        
+        doc.setFontSize(10);
+        doc.setTextColor(80, 80, 80);
+        
+        const basicInfo = [
+            ['Service Name:', serviceData.name],
+            ['Status:', serviceData.status],
+            ['Description:', serviceData.description || 'No description provided'],
+            ['Created Date:', serviceData.createdDate],
+            ['Last Updated:', serviceData.updatedDate]
+        ];
+        
+        basicInfo.forEach(([label, value]) => {
+            doc.text(label, 25, yPosition);
+            doc.text(value, 80, yPosition);
+            yPosition += 8;
+        });
+        
+        yPosition += 10;
+        
+        // Pricing Information Section
+        doc.setFontSize(14);
+        doc.setTextColor(40, 40, 40);
+        doc.text('Pricing Information', 20, yPosition);
+        yPosition += 15;
+        
+        doc.setFontSize(10);
+        doc.setTextColor(80, 80, 80);
+        
+        const pricingInfo = [
+            ['Initial Price:', '$' + serviceData.initialPrice],
+            ['Renewal Fee:', '$' + serviceData.renewalFee],
+            ['Transfer Fee:', '$' + serviceData.transferFee],
+            ['Renewal Period:', serviceData.renewalPeriod + ' months'],
+            ['Auto Renewal:', serviceData.autoRenewal]
+        ];
+        
+        pricingInfo.forEach(([label, value]) => {
+            doc.text(label, 25, yPosition);
+            doc.text(value, 80, yPosition);
+            yPosition += 8;
+        });
+        
+        yPosition += 10;
+        
+        // Service Properties Section
+        doc.setFontSize(14);
+        doc.setTextColor(40, 40, 40);
+        doc.text('Service Properties', 20, yPosition);
+        yPosition += 15;
+        
+        doc.setFontSize(10);
+        doc.setTextColor(80, 80, 80);
+        
+        const propertiesInfo = [
+            ['Transferable:', serviceData.isTransferable],
+            ['Renewable:', serviceData.isRenewable],
+            ['Requires State Fees:', serviceData.requiresStateFees],
+            ['Visible on Funnel:', serviceData.visibleOnFunnel],
+            ['Requires State Selection:', serviceData.requiresStateSelection]
+        ];
+        
+        propertiesInfo.forEach(([label, value]) => {
+            doc.text(label, 25, yPosition);
+            doc.text(value, 80, yPosition);
+            yPosition += 8;
+        });
+        
+        // Footer
+        doc.setFontSize(8);
+        doc.setTextColor(120, 120, 120);
+        doc.text('Generated on ' + new Date().toLocaleString(), 20, 280);
+        
+        // Download PDF
+        doc.save('Service_Details_' + serviceData.name.replace(/[^a-zA-Z0-9]/g, '_') + '.pdf');
     }
 </script>
 @endpush
