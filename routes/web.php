@@ -256,6 +256,8 @@ Route::group(['middleware' => ['auth', 'role:' . RoleEnum::ADMIN], 'prefix' => '
     Route::resource('services', ServiceController::class)->names('admin.services');
     Route::post('/services/{service}/toggle-status', [ServiceController::class, 'toggleStatus'])->name('admin.services.toggleStatus');
     Route::post('/services/{service}/toggle-visibility', [ServiceController::class, 'toggleVisibility'])->name('admin.services.toggleVisibility');
+    Route::get('/services/{service}/form-builder', [ServiceController::class, 'formBuilder'])->name('admin.services.formBuilder');
+    Route::post('/services/{service}/form-builder', [ServiceController::class, 'storeCustomForm'])->name('admin.services.storeCustomForm');
 });
 
 //Stripe Payment Getaway

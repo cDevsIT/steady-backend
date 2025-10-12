@@ -16,10 +16,12 @@ class ServiceForm extends Model
         'description',
         'icon',
         'is_required',
+        'form_data',
     ];
 
     protected $casts = [
         'is_required' => 'boolean',
+        'form_data' => 'array',
     ];
 
     // Relationships

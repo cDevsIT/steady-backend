@@ -179,9 +179,15 @@
                                         <div class="d-flex align-items-center">
                                             <div class="me-3">
                                                 @if($form->icon)
-                                                    <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
-                                                        <i class="{{ $form->icon }} text-white" style="font-size: 14px;"></i>
-                                                    </div>
+                                                    @if($form->form_type === 'custom')
+                                                        <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                                            <i class="{{ $form->icon }} text-white" style="font-size: 14px;"></i>
+                                                        </div>
+                                                    @else
+                                                        <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                                            <i class="{{ $form->icon }} text-white" style="font-size: 14px;"></i>
+                                                        </div>
+                                                    @endif
                                                 @else
                                                     <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
                                                         <i class="fas fa-user text-white" style="font-size: 14px;"></i>
@@ -190,17 +196,47 @@
                                             </div>
                                             <div class="flex-grow-1">
                                                 <small class="mb-1 fw-semibold">{{ $form->title }}</small>
-                                                <div class="text-muted" style="font-size: 12px;">{{ $form->description }}</div>
+                                                <div class="text-muted" style="font-size: 12px;">
+                                                    {{ $form->description ?: ($form->form_type === 'custom' ? 'Collect customer information and files' : $form->description) }}
+                                                </div>
+                                                @if($form->form_type === 'custom' && $form->form_data)
+                                                    @php
+                                                        $formData = is_array($form->form_data) ? $form->form_data : json_decode($form->form_data, true);
+                                                        $fieldCount = isset($formData['fields']) ? count($formData['fields']) : 0;
+                                                    @endphp
+                                                    <div class="mt-1">
+                                                        <span class="badge bg-info" style="font-size: 10px;">
+                                                            {{ $fieldCount }} field{{ $fieldCount !== 1 ? 's' : '' }}
+                                                        </span>
+                                                        @if(isset($formData['status']) && $formData['status'] === 'active')
+                                                            <span class="badge bg-success" style="font-size: 10px;">Active</span>
+                                                        @else
+                                                            <span class="badge bg-warning" style="font-size: 10px;">Inactive</span>
+                                                        @endif
+                                                    </div>
+                                                @endif
                                             </div>
                                             <div class="ms-2">
-                                                <i class="fas fa-chevron-right text-muted" style="font-size: 12px;"></i>
+                                                @if($form->form_type === 'custom')
+                                                    <a href="{{ route('admin.services.formBuilder', $service) }}" class="btn btn-sm btn-outline-primary">
+                                                        <i class="fas fa-edit me-1"></i>Edit
+                                                    </a>
+                                                @else
+                                                    <i class="fas fa-chevron-right text-muted" style="font-size: 12px;"></i>
+                                                @endif
                                             </div>
                                         </div>
                                     </div>
                                 @endforeach
                             </div>
                         @else
-                            <small class="text-muted mb-0">No forms defined for this service.</small>
+                            <div class="text-center py-4">
+                                <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                                <p class="text-muted mb-3">No forms defined for this service.</p>
+                                <a href="{{ route('admin.services.formBuilder', $service) }}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-plus me-2"></i>Create User Info Form
+                                </a>
+                            </div>
                         @endif
                     </div>
                 </div>

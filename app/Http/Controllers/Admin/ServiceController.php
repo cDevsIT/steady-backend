@@ -328,4 +328,61 @@ class ServiceController extends Controller
             return redirect()->back()->with('error', 'Error updating service visibility.');
         }
     }
+
+    /**
+     * Show the form builder for a service
+     */
+    public function formBuilder(Service $service)
+    {
+        // Set session for sidebar highlighting
+        session(['lsbsm' => 'services']);
+        
+        $service->load(['features', 'forms']);
+        return view('admin.services.form-builder', compact('service'));
+    }
+
+    /**
+     * Store or update custom form for a service
+     */
+    public function storeCustomForm(Request $request, Service $service)
+    {
+        $request->validate([
+            'form_name' => 'required|string|max:255',
+            'form_description' => 'nullable|string',
+            'form_status' => 'required|in:active,inactive',
+            'fields' => 'required|array|min:1',
+            'fields.*.field_type' => 'required|string',
+            'fields.*.field_label' => 'required|string|max:255',
+            'fields.*.field_note' => 'nullable|string',
+            'fields.*.is_required' => 'boolean',
+            'fields.*.allowed_extensions' => 'nullable|string',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            // Delete existing custom forms for this service
+            $service->forms()->where('form_type', 'custom')->delete();
+
+            // Create the main form record
+            $customForm = ServiceForm::create([
+                'service_id' => $service->id,
+                'form_type' => 'custom',
+                'title' => $request->form_name,
+                'description' => $request->form_description,
+                'icon' => 'fas fa-user',
+                'is_required' => true,
+                'form_data' => json_encode([
+                    'status' => $request->form_status,
+                    'fields' => $request->fields
+                ]),
+            ]);
+
+            DB::commit();
+            return redirect()->route('admin.services.show', $service)->with('success', 'Custom form created successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error creating custom form: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error creating custom form.')->withInput();
+        }
+    }
 }

@@ -269,6 +269,11 @@
                                                         <i class="fas fa-edit me-2"></i>Edit Service
                                                     </a>
                                                 </li>
+                                                <li>
+                                                    <a class="dropdown-item" href="{{ route('admin.services.formBuilder', $service) }}">
+                                                        <i class="fas fa-form me-2"></i>User Info
+                                                    </a>
+                                                </li>
                                                 <li><hr class="dropdown-divider"></li>
                                                 <li>
                                                     <form action="{{ route('admin.services.toggleStatus', $service) }}" method="POST" class="d-inline">
