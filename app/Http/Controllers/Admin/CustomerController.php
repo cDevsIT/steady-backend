@@ -395,4 +395,25 @@ class CustomerController extends Controller
         }
     }
 
+    public function customerView($customer)
+    {
+        $user = User::find($customer);
+        
+        if (!$user) {
+            return redirect()->back()->with('error', 'Customer not found');
+        }
+        
+        // Get frontend URL from environment
+        $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
+        
+        // Get customer's password (use temp_password if available, otherwise use password)
+        $password = $user->temp_password ?: 'password123'; // fallback password
+        
+        // Create login URL with email and password as query parameters
+        $loginUrl = $frontendUrl . '/login?email=' . urlencode($user->email) . '&password=' . urlencode($password);
+        
+        // Redirect to frontend login page
+        return redirect($loginUrl);
+    }
+
 }

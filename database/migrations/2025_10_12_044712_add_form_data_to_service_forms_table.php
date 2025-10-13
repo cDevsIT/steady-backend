@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('service_forms', function (Blueprint $table) {
-            $table->json('form_data')->nullable()->after('is_required');
+            //
         });
     }
 
@@ -22,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('service_forms', function (Blueprint $table) {
-            $table->dropColumn('form_data');
+            //
         });
     }
 };

@@ -216,6 +216,7 @@ Route::group(['middleware' => ['auth', 'role:' . RoleEnum::ADMIN], 'prefix' => '
     Route::get('/customers/{customer?}', [CustomerController::class, 'customers'])->name('admin.customers');
     Route::match(['get', 'post'], '/customers/create/new', [CustomerController::class, 'createCustomer'])->name('admin.createCustomer');
     Route::put('/customers/{customer}/update', [CustomerController::class, 'customerUpdate'])->name('admin.customerUpdate');
+    Route::get('/customers/{customer}/view', [CustomerController::class, 'customerView'])->name('admin.customerView');
 
     Route::get('/companies/{user?}', [CompanyController::class, 'companies'])->name('admin.companies');
     Route::post('/companies/{user?}', [CompanyController::class, 'companyCreate'])->name('admin.companyCreate');
@@ -256,8 +257,6 @@ Route::group(['middleware' => ['auth', 'role:' . RoleEnum::ADMIN], 'prefix' => '
     Route::resource('services', ServiceController::class)->names('admin.services');
     Route::post('/services/{service}/toggle-status', [ServiceController::class, 'toggleStatus'])->name('admin.services.toggleStatus');
     Route::post('/services/{service}/toggle-visibility', [ServiceController::class, 'toggleVisibility'])->name('admin.services.toggleVisibility');
-    Route::get('/services/{service}/form-builder', [ServiceController::class, 'formBuilder'])->name('admin.services.formBuilder');
-    Route::post('/services/{service}/form-builder', [ServiceController::class, 'storeCustomForm'])->name('admin.services.storeCustomForm');
 });
 
 //Stripe Payment Getaway

@@ -207,6 +207,9 @@
                                             <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#customer_user_update{{$customer->id}}" title="Edit">
                                                 <i class="fas fa-edit"></i>
                                             </button>
+                                            <a href="{{ route('admin.customerView', $customer->id) }}" class="btn btn-outline-success btn-sm me-1" title="Customer View" target="_blank">
+                                                <i class="fas fa-sign-in"></i>
+                                            </a>
                                         </div>
                                     </td>
                                 </tr>
