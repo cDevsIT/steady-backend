@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\TicketsController;
 use App\Http\Controllers\Api\TransitionsController as ApiTransitionsController;
 use App\Http\Controllers\Api\OwnerDocumentsController;
 use App\Http\Controllers\Api\WalletController;
+use App\Http\Controllers\Api\QuickActionsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -138,4 +139,9 @@ Route::prefix('wallet')->group(function () {
     Route::middleware('auth:sanctum')->post('/process-payment', [WalletController::class, 'processWalletPayment']);
 });
 
+// Quick Actions routes
+Route::prefix('quick-actions')->group(function () {
+    // Get quick actions for a user/company
+    Route::get('/user-actions', [QuickActionsController::class, 'getQuickActions']);
+});
 
