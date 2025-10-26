@@ -8,6 +8,7 @@ use App\Models\WalletTransaction;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class WalletController extends Controller
 {
@@ -44,17 +45,37 @@ class WalletController extends Controller
             ]);
 
             // If initial balance > 0, create a transaction record
+            $transactionId = null;
             if ($request->initial_balance && $request->initial_balance > 0) {
+                $transactionId = 'INIT-' . strtoupper(uniqid());
                 $wallet->transactions()->create([
                     'type' => 'Deposit',
                     'amount' => $request->initial_balance,
                     'balance_before' => 0,
                     'balance_after' => $request->initial_balance,
                     'status' => 'Completed',
-                    'reference' => 'INIT-' . strtoupper(uniqid()),
+                    'reference' => $transactionId,
                     'description' => 'Initial balance when wallet was created',
                     'created_by' => auth()->id(),
                 ]);
+
+                // Send email notification to user
+                $user = User::find($request->user_id);
+                try {
+                    Mail::send('email_templates.wallet_balance_added', [
+                        'user' => $user,
+                        'amount' => $request->initial_balance,
+                        'transactionId' => $transactionId,
+                        'currentBalance' => $request->initial_balance,
+                        'note' => 'Initial balance credited to your new wallet'
+                    ], function ($message) use ($user) {
+                        $message->to($user->email, $user->first_name . ' ' . $user->last_name)
+                                ->subject('Your Account Has Been Credited | Steady Formation');
+                    });
+                } catch (\Exception $e) {
+                    // Log error but don't fail the wallet creation
+                    \Log::error('Failed to send wallet balance email: ' . $e->getMessage());
+                }
             }
 
             DB::commit();
@@ -211,16 +232,53 @@ class WalletController extends Controller
         }
 
         $amount = $request->type === 'add' ? abs($request->amount) : -abs($request->amount);
+        $transactionId = 'ADJ-' . strtoupper(uniqid());
+        $description = $request->description ?? ($request->type === 'add' ? 'Balance added by admin' : 'Balance deducted by admin');
         
         DB::beginTransaction();
         try {
-            $wallet->updateBalance(
+            $balanceBefore = $wallet->balance;
+            $transaction = $wallet->updateBalance(
                 $amount,
                 'Adjustment',
-                $request->description ?? ($request->type === 'add' ? 'Balance added by admin' : 'Balance deducted by admin'),
-                'ADJ-' . strtoupper(uniqid()),
+                $description,
+                $transactionId,
                 auth()->id()
             );
+            $balanceAfter = $wallet->fresh()->balance;
+
+            // Send email notification for both add and subtract
+            $user = $wallet->user;
+            try {
+                if ($request->type === 'add') {
+                    // Send credit notification
+                    Mail::send('email_templates.wallet_balance_added', [
+                        'user' => $user,
+                        'amount' => abs($amount),
+                        'transactionId' => $transactionId,
+                        'currentBalance' => $balanceAfter,
+                        'note' => $description
+                    ], function ($message) use ($user) {
+                        $message->to($user->email, $user->first_name . ' ' . $user->last_name)
+                                ->subject('Your Account Has Been Credited | Steady Formation');
+                    });
+                } else {
+                    // Send debit notification
+                    Mail::send('email_templates.wallet_balance_deducted', [
+                        'user' => $user,
+                        'amount' => abs($amount),
+                        'transactionId' => $transactionId,
+                        'currentBalance' => $balanceAfter,
+                        'note' => $description
+                    ], function ($message) use ($user) {
+                        $message->to($user->email, $user->first_name . ' ' . $user->last_name)
+                                ->subject('Account Transaction Notification | Steady Formation');
+                    });
+                }
+            } catch (\Exception $e) {
+                // Log error but don't fail the balance adjustment
+                \Log::error('Failed to send wallet balance email: ' . $e->getMessage());
+            }
 
             DB::commit();
             return back()->with('success', 'Wallet balance adjusted successfully.');
