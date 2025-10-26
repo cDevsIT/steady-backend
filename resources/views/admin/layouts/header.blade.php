@@ -26,7 +26,7 @@
             </div>
             
             <!-- Website Link -->
-            <a href="https://beta.steadyformation.com/" class="header-link website-link me-3" target="_blank" title="Visit Website">
+            <a href="https://steadyformation.com" class="header-link website-link me-3" target="_blank" title="Visit Website">
                 <i class="fas fa-globe"></i>
             </a>
             

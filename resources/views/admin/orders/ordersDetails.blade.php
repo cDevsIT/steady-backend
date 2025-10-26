@@ -156,6 +156,22 @@
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
+
+        /* Select dropdown styling with custom arrow */
+        .status-management-select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            background-size: 16px;
+            padding-right: 30px !important;
+        }
+
+        .status-management-select:focus {
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23007bff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        }
     </style>
 @endpush
 @section('content')
@@ -281,23 +297,39 @@
                                     <i class="fas fa-info-circle me-2 text-primary"></i>Current Status
                                 </label>
                                 <p class="form-control-plaintext fw-semibold">
-                    @if($order->name_availability_search_status == 'processing')
-                                        <span class="status-badge status-processing">Name Availability Search</span>
-                    @elseif($order->state_filing_status == "processing")
-                                        <span class="status-badge status-processing">State Filing</span>
-                    @elseif($order->setup_business_address_status == "processing")
-                                        <span class="status-badge status-processing">Setup Business Address</span>
-                    @elseif($order->mail_forwarding_status == "processing")
-                                        <span class="status-badge status-processing">Mail Forwarding</span>
-                    @elseif($order->ein_filing_status == "processing")
-                                        <span class="status-badge status-processing">EIN Filing</span>
-                    @elseif($order->operating_agreement_status == "processing")
-                                        <span class="status-badge status-processing">Operating Agreement</span>
-                    @elseif($order->complete_status == "processing")
-                                        <span class="status-badge status-processing">Complete</span>
-                                    @else
-                                        <span class="status-badge status-pending">Pending</span>
-                                    @endif
+                    @php
+                        // Define all status fields and their display names
+                        $statusFields = [
+                            'complete_status' => 'Complete',
+                            'operating_agreement_status' => 'Operating Agreement',
+                            'ein_filing_status' => 'EIN Filing',
+                            'mail_forwarding_status' => 'Mail Forwarding',
+                            'setup_business_address_status' => 'Setup Business Address',
+                            'state_filing_status' => 'State Filing',
+                            'name_availability_search_status' => 'Name Availability Search'
+                        ];
+                        
+                        // Check if all statuses are complete
+                        $allComplete = true;
+                        $processingStatus = null;
+                        
+                        foreach ($statusFields as $field => $label) {
+                            if ($order->$field !== 'complete') {
+                                $allComplete = false;
+                            }
+                            if ($order->$field === 'processing' && $processingStatus === null) {
+                                $processingStatus = $label;
+                            }
+                        }
+                    @endphp
+                    
+                    @if($allComplete)
+                        <span class="status-badge status-complete">Completed</span>
+                    @elseif($processingStatus)
+                        <span class="status-badge status-processing">{{ $processingStatus }}</span>
+                    @else
+                        <span class="status-badge status-pending">Pending</span>
+                    @endif
                                 </p>
                             </div>
                             <div>
@@ -493,7 +525,7 @@
                     @csrf
                     <input type="hidden" name="isStatus" value="true">
                     <div class="input-group">
-                                <select name="compliance_status" id="compliance_status" class="form-control form-control-sm">
+                                <select name="compliance_status" id="compliance_status" class="form-control form-control-sm status-management-select">
                                     <option {{$order->compliance_status == 'active' ? 'selected' : ''}} value="active">Active</option>
                                     <option {{$order->compliance_status == 'expired' ? 'selected' : ''}} value="expired">Expired</option>
                         </select>
@@ -511,7 +543,7 @@
                     @csrf
                     <input type="hidden" name="isStatus" value="true">
                     <div class="input-group">
-                                <select name="name_availability_search_status" id="name_availability_search_status" class="form-control form-control-sm">
+                                <select name="name_availability_search_status" id="name_availability_search_status" class="form-control form-control-sm status-management-select">
                                     <option {{$order->name_availability_search_status == 'pending' ? 'selected' : ''}} value="pending">Pending</option>
                                     <option {{$order->name_availability_search_status == 'processing' ? 'selected' : ''}} value="processing">Processing</option>
                                     <option {{$order->name_availability_search_status == 'complete' ? 'selected' : ''}} value="complete">Complete</option>
@@ -530,7 +562,7 @@
                     @csrf
                     <input type="hidden" name="isStatus" value="true">
                     <div class="input-group">
-                                <select name="state_filing_status" id="state_filing_status" class="form-control form-control-sm">
+                                <select name="state_filing_status" id="state_filing_status" class="form-control form-control-sm status-management-select">
                                     <option {{$order->state_filing_status == 'pending' ? 'selected' : ''}} value="pending">Pending</option>
                                     <option {{$order->state_filing_status == 'processing' ? 'selected' : ''}} value="processing">Processing</option>
                                     <option {{$order->state_filing_status == 'complete' ? 'selected' : ''}} value="complete">Complete</option>
@@ -551,7 +583,7 @@
                     @csrf
                     <input type="hidden" name="isStatus" value="true">
                     <div class="input-group">
-                                <select name="setup_business_address_status" id="setup_business_address_status" class="form-control form-control-sm">
+                                <select name="setup_business_address_status" id="setup_business_address_status" class="form-control form-control-sm status-management-select">
                                     <option {{$order->setup_business_address_status == 'pending' ? 'selected' : ''}} value="pending">Pending</option>
                                     <option {{$order->setup_business_address_status == 'processing' ? 'selected' : ''}} value="processing">Processing</option>
                                     <option {{$order->setup_business_address_status == 'complete' ? 'selected' : ''}} value="complete">Complete</option>
@@ -570,7 +602,7 @@
                     @csrf
                     <input type="hidden" name="isStatus" value="true">
                     <div class="input-group">
-                                <select name="mail_forwarding_status" id="mail_forwarding_status" class="form-control form-control-sm">
+                                <select name="mail_forwarding_status" id="mail_forwarding_status" class="form-control form-control-sm status-management-select">
                                     <option {{$order->mail_forwarding_status == 'pending' ? 'selected' : ''}} value="pending">Pending</option>
                                     <option {{$order->mail_forwarding_status == 'processing' ? 'selected' : ''}} value="processing">Processing</option>
                                     <option {{$order->mail_forwarding_status == 'complete' ? 'selected' : ''}} value="complete">Complete</option>
@@ -589,7 +621,7 @@
                     @csrf
                     <input type="hidden" name="isStatus" value="true">
                     <div class="input-group">
-                                <select name="ein_filing_status" id="ein_filing_status" class="form-control form-control-sm">
+                                <select name="ein_filing_status" id="ein_filing_status" class="form-control form-control-sm status-management-select">
                                     <option {{$order->ein_filing_status == 'pending' ? 'selected' : ''}} value="pending">Pending</option>
                                     <option {{$order->ein_filing_status == 'processing' ? 'selected' : ''}} value="processing">Processing</option>
                                     <option {{$order->ein_filing_status == 'complete' ? 'selected' : ''}} value="complete">Complete</option>
@@ -608,7 +640,7 @@
                     @csrf
                     <input type="hidden" name="isStatus" value="true">
                     <div class="input-group">
-                                <select name="operating_agreement_status" id="operating_agreement_status" class="form-control form-control-sm">
+                                <select name="operating_agreement_status" id="operating_agreement_status" class="form-control form-control-sm status-management-select">
                                     <option {{$order->operating_agreement_status == 'pending' ? 'selected' : ''}} value="pending">Pending</option>
                                     <option {{$order->operating_agreement_status == 'processing' ? 'selected' : ''}} value="processing">Processing</option>
                                     <option {{$order->operating_agreement_status == 'complete' ? 'selected' : ''}} value="complete">Complete</option>
@@ -629,7 +661,7 @@
                     @csrf
                     <input type="hidden" name="isStatus" value="true">
                     <div class="input-group">
-                        <select name="complete_status" id="complete_status" class="form-control form-control-sm">
+                        <select name="complete_status" id="complete_status" class="form-control form-control-sm status-management-select">
                                     <option {{$order->complete_status == 'pending' ? 'selected' : ''}} value="pending">Pending</option>
                                     <option {{$order->complete_status == 'processing' ? 'selected' : ''}} value="processing">Processing</option>
                                     <option {{$order->complete_status == 'complete' ? 'selected' : ''}} value="complete">Complete</option>
