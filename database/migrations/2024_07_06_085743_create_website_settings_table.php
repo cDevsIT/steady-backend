@@ -11,14 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('website_settings', function (Blueprint $table) {
-            $table->id();
-            $table->string('gtm')->nullable();
-            $table->string('meta_title')->nullable();
-            $table->text('meta_description')->nullable();
-            $table->string('email_contact')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('website_settings')) {
+            Schema::create('website_settings', function (Blueprint $table) {
+                $table->id();
+                $table->string('gtm')->nullable();
+                $table->string('meta_title')->nullable();
+                $table->text('meta_description')->nullable();
+                $table->string('email_contact')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

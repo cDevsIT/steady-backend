@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\TransitionsController as ApiTransitionsController;
 use App\Http\Controllers\Api\OwnerDocumentsController;
 use App\Http\Controllers\Api\WalletController;
 use App\Http\Controllers\Api\QuickActionsController;
+use App\Http\Controllers\ContactController;
 
 /*
 |--------------------------------------------------------------------------
@@ -144,4 +145,7 @@ Route::prefix('quick-actions')->group(function () {
     // Get quick actions for a user/company
     Route::get('/user-actions', [QuickActionsController::class, 'getQuickActions']);
 });
+
+// Contact Form routes (public)
+Route::post('/contact/submit', [ContactController::class, 'submit']);
 

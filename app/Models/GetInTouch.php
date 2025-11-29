@@ -9,6 +9,24 @@ use Illuminate\Database\Eloquent\Model;
 class GetInTouch extends Model
 {
     use HasFactory;
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
+    protected $fillable = [
+        'name',
+        'first_name',
+        'last_name',
+        'email',
+        'phone',
+        'country_code',
+        'subject',
+        'message',
+        'addedBy',
+    ];
+
     public function getAttribute($key)
     {
         if ($key === 'created_at') {
