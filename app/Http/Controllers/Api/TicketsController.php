@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Mail\TicketCreatedAdminNotification;
+use App\Mail\TicketCreatedClientConfirmation;
 use App\Models\Comment;
 use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
@@ -226,8 +229,56 @@ class TicketsController extends Controller
 
             $ticket->save();
 
-            // Load the created ticket with user data
-            $ticket->load('user:id,first_name,last_name,email,phone');
+            // Load the created ticket with user and company data
+            $ticket->load(['user:id,first_name,last_name,email,phone', 'company:id,company_name']);
+
+            // Send emails (don't fail if email fails)
+            try {
+                $adminEmail = env('ADMIN_EMAIL', 'info@steadyformation.com');
+                $customerName = $ticket->user ? ($ticket->user->first_name . ' ' . $ticket->user->last_name) : 'Customer';
+                $customerEmail = $ticket->user->email ?? '';
+                $customerPhone = $ticket->user->phone ?? '';
+                $companyName = $ticket->company ? $ticket->company->company_name : '';
+                
+                // Admin ticket URL (admin panel)
+                $adminTicketUrl = url('/admin/tickets/' . $ticket->id);
+                
+                // Client ticket URL (frontend - adjust based on your frontend route)
+                $clientTicketUrl = url('/client/support-help/' . $ticket->id);
+
+                // Send email to admin
+                if ($adminEmail) {
+                    Mail::to($adminEmail)->send(new TicketCreatedAdminNotification([
+                        'ticketId' => $ticket->id,
+                        'customerName' => $customerName,
+                        'customerEmail' => $customerEmail,
+                        'customerPhone' => $customerPhone,
+                        'companyName' => $companyName,
+                        'ticketTitle' => $ticket->title,
+                        'ticketContent' => $ticket->content,
+                        'ticketStatus' => $ticket->status,
+                        'createdAt' => $ticket->created_at ? \Carbon\Carbon::parse($ticket->created_at)->format('M d, Y h:i A') : '',
+                        'hasAttachment' => !empty($ticket->file_name),
+                        'ticketUrl' => $adminTicketUrl,
+                    ]));
+                }
+
+                // Send confirmation email to client
+                if ($customerEmail) {
+                    Mail::to($customerEmail)->send(new TicketCreatedClientConfirmation([
+                        'customerName' => $customerName,
+                        'ticketId' => $ticket->id,
+                        'ticketTitle' => $ticket->title,
+                        'ticketContent' => $ticket->content,
+                        'ticketStatus' => $ticket->status,
+                        'ticketUrl' => $clientTicketUrl,
+                    ]));
+                }
+            } catch (\Exception $emailError) {
+                // Log email error but don't fail the request
+                \Log::error('Failed to send ticket creation emails: ' . $emailError->getMessage());
+                \Log::error('Email error trace: ' . $emailError->getTraceAsString());
+            }
 
             return response()->json([
                 'status' => 'success',

@@ -4,6 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Jobs\TicketCommandJob;
+use App\Mail\TicketAdminReplyNotification;
+use App\Mail\TicketClosedNotification;
+use App\Mail\TicketCreatedByAdminAdminConfirmation;
+use App\Mail\TicketCreatedByAdminClientNotification;
 use App\Models\Comment;
 use App\Models\Company;
 use App\Models\Ticket;
@@ -13,6 +17,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Storage;
@@ -153,13 +158,22 @@ class TicketController extends Controller
     public function store(Request $request)
     {
         $ticket = Ticket::find($request->ticket_id);
+        
+        // Store old status to check if ticket was just closed
+        $oldStatus = $ticket->status;
+        
+        // Load ticket with user and company data
+        $ticket->load(['user:id,first_name,last_name,email,phone', 'company:id,company_name']);
+        
         $comment = new Comment;
         $comment->comment_text = $request->comment_text;
         $comment->ticket_id = $ticket->id;
         $comment->user_id = Auth::id();
+        
+        $hasAttachment = false;
         if ($request->hasFile('attachment')) {
             $thumbnail_path = 'uploads/tickets/comment';
-            if (!Storage::disk('public')->directoryExists($thumbnail_path)) {
+            if (!Storage::disk('public')->exists($thumbnail_path)) {
                 Storage::disk('public')->makeDirectory($thumbnail_path);
             }
             $file = $request->file('attachment');
@@ -172,8 +186,9 @@ class TicketController extends Controller
             $filePath = url(Storage::url($fileNameToStore));
 
             $comment->attachment = $fileNameToStore;
-
+            $hasAttachment = true;
         }
+        
         $comment->save();
         
         // Standardize status values - always save as 'Close' (without 'd') for consistency
@@ -183,9 +198,51 @@ class TicketController extends Controller
         }
         $ticket->status = $status;
         $ticket->save();
-//        $user = User::find($ticket->user_id);
-//        $route = route('web.viewTicket', $ticket);
-//        TicketCommandJob::dispatch($comment, $route, $user);
+        
+        // Check if ticket was just closed
+        $wasJustClosed = ($oldStatus !== 'Close' && $status === 'Close');
+        
+        // Get current user (admin)
+        $currentUser = Auth::user();
+        $isAdmin = $currentUser && $currentUser->role == 1;
+        
+        // Send emails (don't fail if email fails)
+        try {
+            $customer = $ticket->user;
+            if ($customer && $customer->email) {
+                $customerName = $customer->first_name . ' ' . $customer->last_name;
+                $clientTicketUrl = url('/client/support-help/' . $ticket->id);
+                
+                // If admin replied, send reply notification
+                if ($isAdmin && !empty($request->comment_text)) {
+                    Mail::to($customer->email)->send(new TicketAdminReplyNotification([
+                        'customerName' => $customerName,
+                        'ticketId' => $ticket->id,
+                        'ticketTitle' => $ticket->title,
+                        'ticketStatus' => $ticket->status,
+                        'replyMessage' => $request->comment_text,
+                        'hasAttachment' => $hasAttachment,
+                        'ticketUrl' => $clientTicketUrl,
+                    ]));
+                }
+                
+                // If ticket was just closed, send closed notification
+                if ($wasJustClosed) {
+                    Mail::to($customer->email)->send(new TicketClosedNotification([
+                        'customerName' => $customerName,
+                        'ticketId' => $ticket->id,
+                        'ticketTitle' => $ticket->title,
+                        'closingMessage' => $request->comment_text ?: 'Your ticket has been closed by our support team.',
+                        'ticketUrl' => $clientTicketUrl,
+                    ]));
+                }
+            }
+        } catch (\Exception $emailError) {
+            // Log email error but don't fail the request
+            \Log::error('Failed to send ticket reply/closed emails: ' . $emailError->getMessage());
+            \Log::error('Email error trace: ' . $emailError->getTraceAsString());
+        }
+        
         return redirect()->back()->with('success', 'Comment successfully. Done');
     }
 
@@ -212,7 +269,7 @@ class TicketController extends Controller
 
         if ($request->hasFile('attachment')) {
             $thumbnail_path = 'uploads/tickets';
-            if (!Storage::disk('public')->directoryExists($thumbnail_path)) {
+            if (!Storage::disk('public')->exists($thumbnail_path)) {
                 Storage::disk('public')->makeDirectory($thumbnail_path);
             }
             $file = $request->file('attachment');
@@ -224,6 +281,52 @@ class TicketController extends Controller
         }
 
         $ticket->save();
+
+        // Load ticket with user and company data
+        $ticket->load(['user:id,first_name,last_name,email,phone', 'company:id,company_name']);
+
+        // Send emails (don't fail if email fails)
+        try {
+            $adminEmail = env('ADMIN_EMAIL', 'info@steadyformation.com');
+            $customer = $ticket->user;
+            $customerName = $customer ? ($customer->first_name . ' ' . $customer->last_name) : 'Customer';
+            $customerEmail = $customer->email ?? '';
+            $companyName = $ticket->company ? $ticket->company->company_name : '';
+            
+            // Admin ticket URL
+            $adminTicketUrl = route('tickets.show', $ticket->id);
+            
+            // Client ticket URL (frontend - adjust based on your frontend route)
+            $clientTicketUrl = url('/client/support-help/' . $ticket->id);
+
+            // Send confirmation email to admin
+            if ($adminEmail) {
+                Mail::to($adminEmail)->send(new TicketCreatedByAdminAdminConfirmation([
+                    'ticketId' => $ticket->id,
+                    'customerName' => $customerName,
+                    'companyName' => $companyName,
+                    'ticketTitle' => $ticket->title,
+                    'ticketStatus' => $ticket->status,
+                    'ticketUrl' => $adminTicketUrl,
+                ]));
+            }
+
+            // Send notification email to client
+            if ($customerEmail) {
+                Mail::to($customerEmail)->send(new TicketCreatedByAdminClientNotification([
+                    'customerName' => $customerName,
+                    'ticketId' => $ticket->id,
+                    'ticketTitle' => $ticket->title,
+                    'ticketContent' => $ticket->content,
+                    'ticketStatus' => $ticket->status,
+                    'ticketUrl' => $clientTicketUrl,
+                ]));
+            }
+        } catch (\Exception $emailError) {
+            // Log email error but don't fail the request
+            \Log::error('Failed to send admin ticket creation emails: ' . $emailError->getMessage());
+            \Log::error('Email error trace: ' . $emailError->getTraceAsString());
+        }
 
         return redirect()->route('tickets.index', ['status' => 'admin_ticket'])->with('success', 'Ticket created successfully.');
     }
