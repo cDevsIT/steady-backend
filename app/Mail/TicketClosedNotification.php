@@ -42,3 +42,5 @@ class TicketClosedNotification extends Mailable
     }
 }
 
+
+
