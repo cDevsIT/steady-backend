@@ -177,6 +177,19 @@
                                 </div>
                                 <div class="card-body">
                                     <div class="mb-3">
+                                        <label for="slug" class="form-label fw-semibold text-muted small">
+                                            <i class="fas fa-link me-2 text-primary"></i>URL Slug
+                                        </label>
+                                        <input type="text" 
+                                               class="form-control form-control-sm" 
+                                               id="slug" 
+                                               name="slug" 
+                                               value="{{old('slug') ?: $blog->slug}}"
+                                               placeholder="url-slug-example">
+                                        <small class="text-muted">URL-friendly version of the title. Leave blank to auto-generate.</small>
+                                    </div>
+
+                                    <div class="mb-3">
                                         <label for="meta_title" class="form-label fw-semibold text-muted small">
                                             <i class="fas fa-heading me-2 text-primary"></i>Meta Title
                                         </label>
@@ -280,6 +293,7 @@
             // Reset form to original values
             document.getElementById('title').value = '{{ $blog->title }}';
             document.getElementById('description').value = '{{ $blog->description }}';
+            document.getElementById('slug').value = '{{ $blog->slug }}';
             document.getElementById('meta_title').value = '{{ $blog->meta_title }}';
             document.getElementById('meta_description').value = '{{ $blog->meta_description }}';
             $('#content').summernote('code', '{!! $blog->content !!}');

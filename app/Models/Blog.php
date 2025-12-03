@@ -14,13 +14,14 @@ class Blog extends Model
     use Sluggable;
     use SluggableScopeHelpers;
 
-    protected $fillable = ['title', 'content', 'description'];
+    protected $fillable = ['title', 'content', 'description', 'slug'];
 
     public function sluggable(): array
     {
         return [
             'slug' => [
-                'source' => 'title'
+                'source' => 'title',
+                'onUpdate' => false, // Don't auto-regenerate slug on update
             ]
         ];
     }

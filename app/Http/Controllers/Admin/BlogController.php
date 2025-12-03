@@ -82,18 +82,21 @@ class BlogController extends Controller
         $post->meta_description = $request->meta_description;
         $post->addedBy = auth()->id();
 
-//        $existingFilePath = 'uploads/posts/' . $order->en_file;
-//        if (Storage::disk('public')->exists($existingFilePath)) {
-//            Storage::disk('public')->delete($existingFilePath);
-//        }
-
         if ($request->file('feature_image')) {
             $file = $request->file('feature_image');
             $fileName = time() . '.' . $file->getClientOriginalExtension();
             $path = $file->storeAs('uploads/blog', $fileName, 'public');
             $post->feature_image = $fileName;
         }
+        
+        // Save first to let sluggable trait generate the slug if needed
         $post->save();
+        
+        // If custom slug is provided, update it after save
+        if ($request->filled('slug')) {
+            $post->slug = \Illuminate\Support\Str::slug($request->slug);
+            $post->save();
+        }
 
         // Handle tags
         $tags = [];
@@ -149,7 +152,6 @@ class BlogController extends Controller
         $post->meta_description = $request->meta_description;
         $post->addedBy = auth()->id();
 
-
         if ($request->file('feature_image')) {
             $existingFilePath = 'uploads/posts/' . $post->feature_image;
             if (Storage::disk('public')->exists($existingFilePath)) {
@@ -161,6 +163,16 @@ class BlogController extends Controller
             $path = $file->storeAs('uploads/blog', $fileName, 'public');
             $post->feature_image = $fileName;
         }
+        
+        // Handle slug - use custom slug if provided, otherwise regenerate from title
+        if ($request->filled('slug')) {
+            // Use custom slug
+            $post->slug = \Illuminate\Support\Str::slug($request->slug);
+        } else {
+            // Regenerate from title
+            $post->slug = \Illuminate\Support\Str::slug($request->title);
+        }
+        
         $post->save();
 
         // Handle tags
