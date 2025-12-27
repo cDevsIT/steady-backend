@@ -11,12 +11,13 @@ use App\Models\StateFee;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Stripe\Checkout\Session;
 use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;
 use Stripe\Stripe;
+use App\Services\PaymentProcessingService;
 use App\Services\StoreDataService;
+use App\Services\DataTransformationService;
 
 class StripeController extends Controller
 {
@@ -36,7 +37,7 @@ class StripeController extends Controller
             $request->localStorageData = json_decode($request->localStorageData, true);
             
             // Transform Next.js data structure to Laravel expected structure
-            $transformedData = $this->transformDataForLaravel($request->localStorageData);
+            $transformedData = DataTransformationService::transformNextJsToLaravel($request->localStorageData);
             $request->localStorageData = $transformedData;
             
             $result = StoreDataService::storeData($request);
@@ -80,15 +81,18 @@ class StripeController extends Controller
                 ];
             }
 
-            // Add Package Amount
-            if ($order->package_amount) {
+            // Add Business Address service fee from subscriptions table (service_id = 6)
+            $businessAddressSubscription = \App\Models\Subscription::where('order_id', $order->id)
+                ->where('service_id', 6)
+                ->first();
+            if ($businessAddressSubscription && $businessAddressSubscription->service_fee > 0) {
                 $line_items[] = [
                     'price_data' => [
                         'currency' => 'usd',
                         'product_data' => [
                             'name' => 'Business Address Fee',
                         ],
-                        'unit_amount' => $order->package_amount * 100,
+                        'unit_amount' => $businessAddressSubscription->service_fee * 100,
                     ],
                     'quantity' => 1,
                 ];
@@ -165,6 +169,10 @@ class StripeController extends Controller
                     'user_id' => $result['user_id'],
                     'company_id' => $result['company_id'],
                     'order_id' => $order->id,
+                    'renewal_fee' => $transformedData['s4_plan']['renewal_fee'] ?? $transformedData['s4_plan']['plan_price'] ?? '0',
+                    'registered_agent_service' => isset($transformedData['registered_agent_service']) ? json_encode($transformedData['registered_agent_service']) : null,
+                    'ein_service' => isset($transformedData['ein_service']) ? json_encode($transformedData['ein_service']) : null,
+                    'operating_agreement_service' => isset($transformedData['operating_agreement_service']) ? json_encode($transformedData['operating_agreement_service']) : null,
                 ],
                 // Add branding with logo at the top of checkout page
                 'custom_text' => [
@@ -198,97 +206,6 @@ class StripeController extends Controller
         }
     }
 
-    private function transformDataForLaravel($nextJsData)
-    {
-        Log::info('Transforming Next.js data to Laravel format:', $nextJsData);
-        
-        $laravelData = [];
-        
-        // Step 1: Company Name
-        $laravelData['s1_company_name'] = $nextJsData['companyName'] ?? '';
-        
-        // Step 2: User Info
-        $laravelData['s2_stepTowData'] = [
-            'first_name' => $nextJsData['userInfo']['first_name'] ?? '',
-            'last_name' => $nextJsData['userInfo']['last_name'] ?? '',
-            'email' => $nextJsData['userInfo']['email'] ?? '',
-            'phone_number' => $nextJsData['userInfo']['phone_number'] ?? '',
-        ];
-        
-        // Check if user is authenticated (for existing users)
-        if (auth()->check()) {
-            $laravelData['active_user'] = auth()->id();
-        }
-        
-        // Step 3: Business Details
-        $laravelData['s3_business_type'] = $nextJsData['businessType'] ?? '';
-        $laravelData['s3_business_type_sub'] = $nextJsData['businessDetails']['llcType'] ?? '';
-        $laravelData['s3_type_of_industry'] = $nextJsData['businessDetails']['industryType'] ?? '';
-        $laravelData['s3_state_name'] = $nextJsData['businessDetails']['stateName'] ?? '';
-        $laravelData['s3_number_of_ownership'] = $nextJsData['businessDetails']['number_of_ownership'] ?? 1;
-        
-        // Get dynamic state fee from database
-        $stateName = $nextJsData['businessDetails']['stateName'] ?? '';
-        $stateFee = StateFee::where('state_name', $stateName)->first();
-        $laravelData['s3_start_fee'] = $stateFee ? $stateFee->fees : 100; // Use dynamic fee or fallback to 100
-        
-        // Step 4: Plan Selection
-        $laravelData['s4_plan'] = [
-            'plan_name' => $nextJsData['plan']['plan_name'] ?? '',
-            'plan_price' => $nextJsData['plan']['plan_price'] ?? 0,
-        ];
-        
-        if (isset($nextJsData['plan']['free_plan_details'])) {
-            $laravelData['s4_free_plan_details'] = $nextJsData['plan']['free_plan_details'];
-        }
-        
-        // Step 5: EIN Amount
-        $laravelData['s5_en_amount'] = $nextJsData['en_amount'] ?? 0;
-        
-        // Step 6: Agreement Amount
-        $laravelData['s6_agreement_amount'] = $nextJsData['agreement_amount'] ?? 0;
-        
-        // Step 7: Rush Processing Amount
-        $laravelData['s7_rush_processing_amount'] = $nextJsData['rush_processing_amount'] ?? 0;
-        
-        // Step 8: Multimember Fee
-        $laravelData['s8_multimember_fee'] = $nextJsData['multimemberFee'] ?? 0;
-        
-        // Step 8: Agent Information
-        if (isset($nextJsData['agent_information'])) {
-            $laravelData['s8_agent_information'] = $nextJsData['agent_information'];
-        }
-        
-        // Agent info fields that StoreDataService expects
-        $laravelData['agentInfo'] = $nextJsData['agentInfo'] ?? '';
-        $laravelData['agentInfoTwo'] = $nextJsData['agentInfoTwo'] ?? '';
-        $laravelData['step_5_agent_information'] = $nextJsData['agent_information'] ?? [];
-        
-        // Step 9: Multi-member info (owners)
-        if (isset($nextJsData['businessDetails']['multi_member_info'])) {
-            $laravelData['s3_multi_member_info'] = $nextJsData['businessDetails']['multi_member_info'];
-        } else {
-            // Provide default single member info if not provided
-            $laravelData['s3_multi_member_info'] = [
-                [
-                    'name' => ($nextJsData['userInfo']['first_name'] ?? '') . ' ' . ($nextJsData['userInfo']['last_name'] ?? ''),
-                    'email' => $nextJsData['userInfo']['email'] ?? '',
-                    'phone' => $nextJsData['userInfo']['phone_number'] ?? '',
-                    'ownership_percentage' => 100,
-                    'street_address' => '',
-                    'city' => '',
-                    'state' => '',
-                    'zip_code' => '',
-                    'country' => ''
-                ]
-            ];
-        }
-        
-        Log::info('Transformed Laravel data:', $laravelData);
-        
-        return $laravelData;
-    }
-
     public function success(Request $request)
     {
         try {
@@ -318,43 +235,38 @@ class StripeController extends Controller
             $company = $order->company;
 
             if ($paymentStatus === 'succeeded') {
-                // Create transaction record
-                $transaction = new Transition();
-                $transaction->company_id = $company->id;
-                $transaction->user_id = $user->id;
-                $transaction->charge_id = $paymentIntentId;
-                $transaction->status = 'COMPLETED';
-                $transaction->payment_method = 'Stripe';
-                $transaction->receipt_url = $paymentIntent->receipt_url;
-                $transaction->card_type = $paymentMethod->card->brand;
-                $transaction->amount = $paymentIntent->amount / 100;
-                $transaction->player_name = $user->first_name . ' ' . $user->last_name;
-                $transaction->save();
+                // Get renewal_fee from session metadata (stored when creating checkout session)
+                $renewalFee = isset($session->metadata->renewal_fee) ? (float) $session->metadata->renewal_fee : null;
+                
+                // Extract services from session metadata
+                $services = PaymentProcessingService::extractServicesFromData(null, $session->metadata);
+                
+                // Process payment completion using PaymentProcessingService
+                $paymentData = [
+                    'user' => $user,
+                    'company' => $company,
+                    'order' => $order,
+                    'charge_id' => $paymentIntentId,
+                    'payment_method' => 'Stripe',
+                    'amount' => $paymentIntent->amount / 100,
+                    'status' => 'COMPLETED',
+                    'card_type' => $paymentMethod->card->brand ?? null,
+                    'receipt_url' => $paymentIntent->receipt_url ?? null,
+                    'renewal_fee' => $renewalFee, // Pass renewal_fee from frontend plan data (Business Address)
+                ];
+                
+                // Add services array if services exist
+                if (!empty($services)) {
+                    $paymentData['services'] = $services;
+                }
+                
+                $paymentResult = PaymentProcessingService::processPaymentCompletion($paymentData);
 
-                // Update company and order
-                $company->transition_id = $transaction->id;
-                $company->save();
+                if (!$paymentResult['success']) {
+                    throw new \Exception($paymentResult['error'] ?? 'Failed to process payment completion');
+                }
 
-                $order->transition_id = $transaction->id;
-                $order->payment_status = $transaction->status;
-                $order->save();
-
-                // Generate temporary login token
-                $tempToken = \Illuminate\Support\Str::random(32);
-                $user->temp_login_token = $tempToken;
-                $user->temp_token_expires_at = now()->addMinutes(30); // Token expires in 30 minutes
-                $user->save();
-
-                // Send email
-                $to = $user->email;
-                $subject = "Steady Formation Access";
-                $password = $user->temp_password;
-
-                Mail::send('email_templates.registration', compact('user', 'password'), function ($message) use ($subject, $to) {
-                    $message->from('noreply@funnel.com', env('APP_NAME', 'Steady Formation Access'));
-                    $message->to($to);
-                    $message->subject($subject);
-                });
+                $tempToken = $paymentResult['temp_token'];
 
                 // Redirect to setup-company page with success parameters and temp token
                 return redirect($this->getFrontendUrl() . '/setup-company?payment=success&session_id=' . $sessionId . '&user_id=' . $userId . '&order_id=' . $orderId . '&temp_login_token=' . $tempToken);
@@ -486,49 +398,39 @@ class StripeController extends Controller
             $paymentMethodId = $paymentIntent->payment_method;
             $paymentMethod = PaymentMethod::retrieve($paymentMethodId);
 
-            // Create transaction record
-            $transaction = new Transition();
-            $transaction->company_id = $company->id;
-            $transaction->user_id = $user->id;
-            $transaction->charge_id = $paymentIntentId;
-            $transaction->status = 'COMPLETED';
-            $transaction->payment_method = 'Stripe';
-            $transaction->receipt_url = $paymentIntent->receipt_url;
-            $transaction->card_type = $paymentMethod->card->brand ?? 'unknown';
-            $transaction->amount = $paymentIntent->amount / 100;
-            $transaction->player_name = $user->first_name . ' ' . $user->last_name;
-            $transaction->save();
+            // Extract services from session metadata
+            $services = PaymentProcessingService::extractServicesFromData(null, $session->metadata);
+            
+            // Process payment completion using PaymentProcessingService
+            $paymentData = [
+                'user' => $user,
+                'company' => $company,
+                'order' => $order,
+                'charge_id' => $paymentIntentId,
+                'payment_method' => 'Stripe',
+                'amount' => $paymentIntent->amount / 100,
+                'status' => 'COMPLETED',
+                'card_type' => $paymentMethod->card->brand ?? 'unknown',
+                'receipt_url' => $paymentIntent->receipt_url ?? null,
+                'renewal_fee' => isset($session->metadata->renewal_fee) ? (float) $session->metadata->renewal_fee : null,
+            ];
+            
+            // Add services array if services exist
+            if (!empty($services)) {
+                $paymentData['services'] = $services;
+            }
+            
+            $paymentResult = PaymentProcessingService::processPaymentCompletion($paymentData);
 
-            // Update company and order
-            $company->transition_id = $transaction->id;
-            $company->save();
-
-            $order->transition_id = $transaction->id;
-            $order->payment_status = 'COMPLETED';
-            $order->save();
-
-            // Generate temporary login token
-            $tempToken = \Illuminate\Support\Str::random(32);
-            $user->temp_login_token = $tempToken;
-            $user->temp_token_expires_at = now()->addMinutes(30);
-            $user->save();
-
-            // Send email
-            $to = $user->email;
-            $subject = "Steady Formation Access";
-            $password = $user->temp_password;
-
-            Mail::send('email_templates.registration', compact('user', 'password'), function ($message) use ($subject, $to) {
-                $message->from('noreply@funnel.com', env('APP_NAME', 'Steady Formation Access'));
-                $message->to($to);
-                $message->subject($subject);
-            });
+            if (!$paymentResult['success']) {
+                throw new \Exception($paymentResult['error'] ?? 'Failed to process payment completion');
+            }
 
             Log::info('Checkout session completed successfully', [
                 'session_id' => $session->id,
                 'user_id' => $userId,
                 'order_id' => $orderId,
-                'transaction_id' => $transaction->id
+                'transition_id' => $paymentResult['transition']->id
             ]);
 
         } catch (\Exception $e) {

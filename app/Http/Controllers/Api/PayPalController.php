@@ -11,9 +11,10 @@ use App\Models\StateFee;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use App\Services\PayPalService;
+use App\Services\PaymentProcessingService;
 use App\Services\StoreDataService;
+use App\Services\DataTransformationService;
 
 class PayPalController extends Controller
 {
@@ -48,8 +49,11 @@ class PayPalController extends Controller
             $request->localStorageData = json_decode($request->localStorageData, true);
             
             // Transform Next.js data structure to Laravel expected structure
-            $transformedData = $this->transformDataForLaravel($request->localStorageData);
+            $transformedData = DataTransformationService::transformNextJsToLaravel($request->localStorageData);
             $request->localStorageData = $transformedData;
+            
+            // Store transformed data in session for later use in success callback
+            session(['transformed_data' => $transformedData]);
             
             $result = StoreDataService::storeData($request);
             
@@ -149,49 +153,46 @@ class PayPalController extends Controller
             }
 
             if (isset($response['status']) && $response['status'] == 'COMPLETED') {
-                // Create transaction record
-                $transaction = new Transition();
-                $transaction->company_id = $company->id;
-                $transaction->user_id = $user->id;
-                $transaction->charge_id = $response['id'];
-                $transaction->status = $response['status'];
-                $transaction->payment_method = 'PayPal';
-                $transaction->receipt_url = '';
-                $transaction->card_type = 'PayPal';
-                $transaction->amount = $company->total_amount;
-                $transaction->player_name = $response['payer']['name']['given_name'] . ' ' . $response['payer']['name']['surname'];
-                $transaction->save();
-
-                // Update company and order
-                $company->transition_id = $transaction->id;
-                $company->save();
-
+                // Get order if not already available
                 $order = Order::where('company_id', $company->id)->first();
-                if ($order) {
-                    $order->transition_id = $transaction->id;
-                    $order->payment_status = $transaction->status;
-                    $order->save();
+
+                if (!$order) {
+                    throw new \Exception('Order not found for company');
                 }
 
-                // Generate temporary login token
-                $tempToken = \Illuminate\Support\Str::random(32);
-                $user->temp_login_token = $tempToken;
-                $user->temp_token_expires_at = now()->addMinutes(30); // Token expires in 30 minutes
-                $user->save();
+                // Extract services from transformed data (stored in createPayment)
+                $transformedData = session('transformed_data');
+                $services = PaymentProcessingService::extractServicesFromData($transformedData);
 
-                // Send email
-                $to = $user->email;
-                $subject = "Steady Formation Access";
-                $password = $user->temp_password;
+                // Process payment completion using PaymentProcessingService
+                $paymentData = [
+                    'user' => $user,
+                    'company' => $company,
+                    'order' => $order,
+                    'charge_id' => $response['id'],
+                    'payment_method' => 'PayPal',
+                    'amount' => $company->total_amount,
+                    'status' => $response['status'],
+                    'card_type' => 'PayPal',
+                    'receipt_url' => null,
+                    'player_name' => $response['payer']['name']['given_name'] . ' ' . $response['payer']['name']['surname'],
+                ];
+                
+                // Add services array if services exist
+                if (!empty($services)) {
+                    $paymentData['services'] = $services;
+                }
+                
+                $paymentResult = PaymentProcessingService::processPaymentCompletion($paymentData);
 
-                Mail::send('email_templates.registration', compact('user', 'password'), function ($message) use ($subject, $to) {
-                    $message->from('noreply@funnel.com', env('APP_NAME', 'Steady Formation Access'));
-                    $message->to($to);
-                    $message->subject($subject);
-                });
+                if (!$paymentResult['success']) {
+                    throw new \Exception($paymentResult['error'] ?? 'Failed to process payment completion');
+                }
+
+                $tempToken = $paymentResult['temp_token'];
 
                 // Clear session data
-                session()->forget(['user_id', 'company_id', 'paypal_payment_id']);
+                session()->forget(['user_id', 'company_id', 'paypal_payment_id', 'transformed_data']);
 
                 // Redirect to setup-company page with success parameters and temp token
                 return redirect($this->getFrontendUrl() . '/setup-company?payment=success&token=' . $token . '&PayerID=' . $paymentId . '&temp_login_token=' . $tempToken);
@@ -271,97 +272,6 @@ class PayPalController extends Controller
                 'message' => 'Failed to process cancellation: ' . $e->getMessage()
             ], 500);
         }
-    }
-
-    private function transformDataForLaravel($nextJsData)
-    {
-        Log::info('Transforming Next.js data to Laravel format (PayPal):', $nextJsData);
-        
-        $laravelData = [];
-        
-        // Step 1: Company Name
-        $laravelData['s1_company_name'] = $nextJsData['companyName'] ?? '';
-        
-        // Step 2: User Info
-        $laravelData['s2_stepTowData'] = [
-            'first_name' => $nextJsData['userInfo']['first_name'] ?? '',
-            'last_name' => $nextJsData['userInfo']['last_name'] ?? '',
-            'email' => $nextJsData['userInfo']['email'] ?? '',
-            'phone_number' => $nextJsData['userInfo']['phone_number'] ?? '',
-        ];
-        
-        // Check if user is authenticated (for existing users)
-        if (auth()->check()) {
-            $laravelData['active_user'] = auth()->id();
-        }
-        
-        // Step 3: Business Details
-        $laravelData['s3_business_type'] = $nextJsData['businessType'] ?? '';
-        $laravelData['s3_business_type_sub'] = $nextJsData['businessDetails']['llcType'] ?? '';
-        $laravelData['s3_type_of_industry'] = $nextJsData['businessDetails']['industryType'] ?? '';
-        $laravelData['s3_state_name'] = $nextJsData['businessDetails']['stateName'] ?? '';
-        $laravelData['s3_number_of_ownership'] = $nextJsData['businessDetails']['number_of_ownership'] ?? 1;
-        
-        // Get dynamic state fee from database
-        $stateName = $nextJsData['businessDetails']['stateName'] ?? '';
-        $stateFee = StateFee::where('state_name', $stateName)->first();
-        $laravelData['s3_start_fee'] = $stateFee ? $stateFee->fees : 100; // Use dynamic fee or fallback to 100
-        
-        // Step 4: Plan Selection
-        $laravelData['s4_plan'] = [
-            'plan_name' => $nextJsData['plan']['plan_name'] ?? '',
-            'plan_price' => $nextJsData['plan']['plan_price'] ?? 0,
-        ];
-        
-        if (isset($nextJsData['plan']['free_plan_details'])) {
-            $laravelData['s4_free_plan_details'] = $nextJsData['plan']['free_plan_details'];
-        }
-        
-        // Step 5: EIN Amount
-        $laravelData['s5_en_amount'] = $nextJsData['en_amount'] ?? 0;
-        
-        // Step 6: Agreement Amount
-        $laravelData['s6_agreement_amount'] = $nextJsData['agreement_amount'] ?? 0;
-        
-        // Step 7: Rush Processing Amount
-        $laravelData['s7_rush_processing_amount'] = $nextJsData['rush_processing_amount'] ?? 0;
-        
-        // Step 8: Multimember Fee
-        $laravelData['s8_multimember_fee'] = $nextJsData['multimemberFee'] ?? 0;
-        
-        // Step 8: Agent Information
-        if (isset($nextJsData['agent_information'])) {
-            $laravelData['s8_agent_information'] = $nextJsData['agent_information'];
-        }
-        
-        // Agent info fields that StoreDataService expects
-        $laravelData['agentInfo'] = $nextJsData['agentInfo'] ?? '';
-        $laravelData['agentInfoTwo'] = $nextJsData['agentInfoTwo'] ?? '';
-        $laravelData['step_5_agent_information'] = $nextJsData['agent_information'] ?? [];
-        
-        // Step 9: Multi-member info (owners)
-        if (isset($nextJsData['businessDetails']['multi_member_info'])) {
-            $laravelData['s3_multi_member_info'] = $nextJsData['businessDetails']['multi_member_info'];
-        } else {
-            // Provide default single member info if not provided
-            $laravelData['s3_multi_member_info'] = [
-                [
-                    'name' => ($nextJsData['userInfo']['first_name'] ?? '') . ' ' . ($nextJsData['userInfo']['last_name'] ?? ''),
-                    'email' => $nextJsData['userInfo']['email'] ?? '',
-                    'phone' => $nextJsData['userInfo']['phone_number'] ?? '',
-                    'ownership_percentage' => 100,
-                    'street_address' => '',
-                    'city' => '',
-                    'state' => '',
-                    'zip_code' => '',
-                    'country' => ''
-                ]
-            ];
-        }
-        
-        Log::info('Transformed Laravel data (PayPal):', $laravelData);
-        
-        return $laravelData;
     }
 
     /**

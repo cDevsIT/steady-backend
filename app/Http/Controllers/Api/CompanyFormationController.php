@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Services\StoreDataService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
@@ -58,6 +57,7 @@ class CompanyFormationController extends Controller
                 's4_plan' => [
                     'plan_name' => $localStorageData['plan']['plan_name'],
                     'plan_price' => $localStorageData['plan']['plan_price'],
+                    'renewal_fee' => $localStorageData['plan']['renewal_fee'] ?? $localStorageData['plan']['plan_price'] ?? 0, // Use renewal_fee if provided, otherwise fallback to plan_price
                 ],
                 's4_free_plan_details' => $localStorageData['plan']['free_plan_details'] ?? [],
                 's5_en_amount' => $localStorageData['en_amount'] ?? 0,

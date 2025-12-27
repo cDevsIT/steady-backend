@@ -37,4 +37,7 @@ class Order extends Model
     public function state (){
         return $this->belongsTo(StateFee::class,'state_id');
     }
+    public function subscriptions(){
+        return $this->hasMany(Subscription::class,'order_id');
+    }
 }

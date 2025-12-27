@@ -56,6 +56,11 @@ class Service extends Model
         return $this->hasMany(ServiceForm::class);
     }
 
+    public function subscriptions()
+    {
+        return $this->hasMany(Subscription::class);
+    }
+
     // Note: Orders relationship removed as orders table doesn't have service_id column
     // public function orders()
     // {

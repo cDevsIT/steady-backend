@@ -8,12 +8,13 @@ use App\Models\Company;
 use App\Models\Order;
 use App\Models\Transition;
 use App\Models\StateFee;
+use App\Services\PaymentProcessingService;
 use App\Services\StoreDataService;
+use App\Services\DataTransformationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 
 class WalletController extends Controller
 {
@@ -124,7 +125,7 @@ class WalletController extends Controller
 
             // Transform company data to match StoreDataService format
             $companyData = $request->input('company_data');
-            $transformedData = $this->transformDataForStorage($companyData);
+            $transformedData = DataTransformationService::transformNextJsToLaravelForWallet($companyData);
             
             // Create a new request for StoreDataService
             $storeRequest = new Request();
@@ -164,42 +165,39 @@ class WalletController extends Controller
                 'created_by' => $user->id,
             ]);
 
-            // Create transition record (following StripeController pattern)
-            $transition = new Transition();
-            $transition->company_id = $company->id;
-            $transition->user_id = $user->id;
-            $transition->charge_id = $transactionReference;
-            $transition->status = 'COMPLETED';
-            $transition->payment_method = 'Wallet';
-            $transition->card_type = null;
-            $transition->amount = $amount;
-            $transition->player_name = $user->first_name . ' ' . $user->last_name;
-            $transition->save();
+            // Extract services from transformed data
+            $services = PaymentProcessingService::extractServicesFromData($transformedData);
 
-            // Update company and order with transition_id
-            $company->transition_id = $transition->id;
-            $company->save();
+            // Process payment completion using PaymentProcessingService
+            $paymentData = [
+                'user' => $user,
+                'company' => $company,
+                'order' => $order,
+                'charge_id' => $transactionReference,
+                'payment_method' => 'Wallet',
+                'amount' => $amount,
+                'status' => 'COMPLETED',
+                'card_type' => null,
+                'receipt_url' => null,
+            ];
+            
+            // Add services array if services exist
+            if (!empty($services)) {
+                $paymentData['services'] = $services;
+            }
+            
+            $paymentResult = PaymentProcessingService::processPaymentCompletion($paymentData);
 
-            $order->transition_id = $transition->id;
-            $order->payment_status = 'paid';
-            $order->save();
+            if (!$paymentResult['success']) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to process payment completion',
+                    'error' => $paymentResult['error'] ?? 'Unknown error'
+                ], 500);
+            }
 
-            // Generate temporary login token (same as Stripe)
-            $tempToken = \Illuminate\Support\Str::random(32);
-            $user->temp_login_token = $tempToken;
-            $user->temp_token_expires_at = now()->addMinutes(30); // Token expires in 30 minutes
-            $user->save();
-
-            // Send email (same as Stripe)
-            $to = $user->email;
-            $subject = "Steady Formation Access";
-            $password = $user->temp_password;
-
-            Mail::send('email_templates.registration', compact('user', 'password'), function ($message) use ($subject, $to) {
-                $message->from('noreply@funnel.com', env('APP_NAME', 'Steady Formation Access'));
-                $message->to($to);
-                $message->subject($subject);
-            });
+            $tempToken = $paymentResult['temp_token'];
 
             DB::commit();
 
@@ -238,84 +236,6 @@ class WalletController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
-    }
-
-    /**
-     * Transform Next.js data format to Laravel StoreDataService format
-     */
-    private function transformDataForStorage($nextJsData)
-    {
-        $laravelData = [];
-        
-        // Step 1: Company Name
-        $laravelData['s1_company_name'] = $nextJsData['companyName'] ?? '';
-        
-        // Step 2: User Info
-        $laravelData['s2_stepTowData'] = [
-            'first_name' => $nextJsData['userInfo']['first_name'] ?? '',
-            'last_name' => $nextJsData['userInfo']['last_name'] ?? '',
-            'email' => $nextJsData['userInfo']['email'] ?? '',
-            'phone_number' => $nextJsData['userInfo']['phone_number'] ?? '',
-        ];
-        
-        // Mark as authenticated user if logged in
-        if (auth()->check()) {
-            $laravelData['active_user'] = auth()->id();
-        }
-        
-        // Step 3: Business Details
-        $laravelData['s3_business_type'] = $nextJsData['businessType'] ?? '';
-        $laravelData['s3_business_type_sub'] = $nextJsData['businessDetails']['llcType'] ?? '';
-        $laravelData['s3_type_of_industry'] = $nextJsData['businessDetails']['industryType'] ?? '';
-        $laravelData['s3_state_name'] = $nextJsData['businessDetails']['stateName'] ?? '';
-        $laravelData['s3_number_of_ownership'] = $nextJsData['businessDetails']['number_of_ownership'] ?? 1;
-        
-        // Get dynamic state fee from database
-        $stateName = $nextJsData['businessDetails']['stateName'] ?? '';
-        $stateFee = StateFee::where('state_name', $stateName)->first();
-        $laravelData['s3_start_fee'] = $stateFee ? $stateFee->fees : 100;
-        
-        // Step 4: Plan Selection
-        $laravelData['s4_plan'] = [
-            'plan_name' => $nextJsData['plan']['plan_name'] ?? '',
-            'plan_price' => $nextJsData['plan']['plan_price'] ?? 0,
-        ];
-        
-        if (isset($nextJsData['plan']['free_plan_details'])) {
-            $laravelData['s4_free_plan_details'] = $nextJsData['plan']['free_plan_details'];
-        }
-        
-        // Step 5: EIN
-        $laravelData['s5_en_amount'] = $nextJsData['ein']['amount'] ?? 0;
-        
-        // Step 6: Operating Agreement
-        $laravelData['s6_agreement_amount'] = $nextJsData['operatingAgreement']['amount'] ?? 0;
-        
-        // Step 7: Rush Processing
-        $laravelData['s7_rush_processing_amount'] = $nextJsData['rushProcessing']['amount'] ?? 0;
-        
-        // Step 8: Multi-member info
-        $laravelData['s8_multimember_fee'] = $nextJsData['multimemberFee'] ?? 0;
-        $laravelData['s3_multi_member_info'] = $nextJsData['owners'] ?? [
-            [
-                'name' => ($nextJsData['userInfo']['first_name'] ?? '') . ' ' . ($nextJsData['userInfo']['last_name'] ?? ''),
-                'email' => $nextJsData['userInfo']['email'] ?? '',
-                'phone' => $nextJsData['userInfo']['phone_number'] ?? '',
-                'ownership_percentage' => 100,
-                'street_address' => '',
-                'city' => '',
-                'state' => '',
-                'zip_code' => '',
-                'country' => '',
-            ]
-        ];
-        
-        // Agent information
-        $laravelData['agentInfo'] = $nextJsData['agentInfo'] ?? '';
-        $laravelData['agentInfoTwo'] = $nextJsData['agentInfoTwo'] ?? '';
-        $laravelData['step_5_agent_information'] = $nextJsData['step_5_agent_information'] ?? null;
-        
-        return $laravelData;
     }
 }
 

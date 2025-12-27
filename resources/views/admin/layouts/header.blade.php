@@ -213,7 +213,7 @@
     font-weight: 500;
     transition: all 0.2s ease;
     border-radius: 8px;
-    margin: 0 0.5rem;
+    margin: 0;
     display: flex;
     align-items: center;
 }
@@ -221,7 +221,7 @@
 .modern-dropdown-item:hover {
     background: #f8f9fa;
     color: #495057;
-    transform: translateX(3px);
+    transform: translateX(1px);
 }
 
 .modern-dropdown-item.text-danger:hover {

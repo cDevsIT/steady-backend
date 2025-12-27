@@ -84,12 +84,13 @@ class StoreDataService
                 $company->type_of_industry = $data['s3_type_of_industry'];
                 $company->number_of_ownership = $data['s3_number_of_ownership'];
                 $company->package_name = $data['s4_plan']['plan_name'];
-                if ($data['s4_plan']['plan_price'] == 0) {
-                    $company->plan_street_address = $data['s4_free_plan_details']['street_address'];
-                    $company->plan_city = $data['s4_free_plan_details']['step4_city'];
-                    $company->plan_state = $data['s4_free_plan_details']['step4_state'];
-                    $company->plan_zip_code = $data['s4_free_plan_details']['step4_zip_code'];
-                    $company->plan_zip_country = $data['s4_free_plan_details']['step4_country'];
+                if ($data['s4_plan']['plan_price'] == 0 && isset($data['s4_free_plan_details'])) {
+                    $freePlanDetails = $data['s4_free_plan_details'];
+                    $company->plan_street_address = $freePlanDetails['street_address'] ?? null;
+                    $company->plan_city = $freePlanDetails['step4_city'] ?? null;
+                    $company->plan_state = $freePlanDetails['step4_state'] ?? null;
+                    $company->plan_zip_code = $freePlanDetails['step4_zip_code'] ?? null;
+                    $company->plan_zip_country = $freePlanDetails['step4_country'] ?? null;
                 }
                 $company->save();
 
