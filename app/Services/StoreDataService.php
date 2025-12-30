@@ -23,9 +23,6 @@ class StoreDataService
     {
         $data = $request->localStorageData;
 
-        // Log the incoming data
-        Log::info('StoreDataService received data:', $data);
-
         try {
             $result = DB::transaction(function () use ($data) {
                 $userData = $data['s2_stepTowData'];
@@ -54,6 +51,11 @@ class StoreDataService
                         // For testing purposes, allow existing users to proceed
                         // In production, you might want to redirect to login
                         $user = $exestingUser;
+                        // Update secondary_phone if provided
+                        if (isset($userData['secondary_phone'])) {
+                            $user->secondary_phone = $userData['secondary_phone'];
+                            $user->save();
+                        }
                         Log::info('Using existing user for payment:', ['user_id' => $user->id, 'email' => $user->email]);
                     } else {
                         $user = new User();
@@ -61,6 +63,7 @@ class StoreDataService
                         $user->last_name = $userData['last_name'];
                         $user->email = $userData['email'];
                         $user->phone = $userData['phone_number'];
+                        $user->secondary_phone = $userData['secondary_phone'] ?? null;
                         $user->password = Hash::make($password);
                         $user->temp_password = $password;
                         $user->active = true;
@@ -84,7 +87,13 @@ class StoreDataService
                 $company->type_of_industry = $data['s3_type_of_industry'];
                 $company->number_of_ownership = $data['s3_number_of_ownership'];
                 $company->package_name = $data['s4_plan']['plan_name'];
-                if ($data['s4_plan']['plan_price'] == 0 && isset($data['s4_free_plan_details'])) {
+                
+                // Save business address for Free plan (plan_price == 0)
+                if (isset($data['s4_plan']['plan_price']) && 
+                    $data['s4_plan']['plan_price'] == 0 && 
+                    isset($data['s4_free_plan_details']) && 
+                    !empty($data['s4_free_plan_details'])) {
+                    
                     $freePlanDetails = $data['s4_free_plan_details'];
                     $company->plan_street_address = $freePlanDetails['street_address'] ?? null;
                     $company->plan_city = $freePlanDetails['step4_city'] ?? null;
@@ -92,6 +101,8 @@ class StoreDataService
                     $company->plan_zip_code = $freePlanDetails['step4_zip_code'] ?? null;
                     $company->plan_zip_country = $freePlanDetails['step4_country'] ?? null;
                 }
+                // Save SSN if provided (for express EIN)
+                $company->ssn = $data['s5_ssn'] ?? null;
                 $company->save();
 
                 $order = new Order;
@@ -122,10 +133,19 @@ class StoreDataService
                 if ($order->multimember_fee > 0) {
                     $order->has_multimember = 1;
                 }
-                $order->register_agent_type = isset($data['agentInfo']) ? $data['agentInfo'] : '';
-                if ($order->register_agent_type == 'own registered agent') {
-                    $order->register_agent_infos = isset($data['agentInfoTwo']) ? $data['agentInfoTwo'] : '';
-                    $order->agent_information_details = isset($data['step_5_agent_information']) ? json_encode($data['step_5_agent_information']) : null;
+                // Set register_agent_type based on whether agent_information is provided (new format) or legacy format
+                if (isset($data['agent_information'])) {
+                    // New format from FourthFunnel - user selected "own registered agent"
+                    $order->register_agent_type = 'own registered agent';
+                    $order->register_agent_infos = $data['agent_information']['agent_type'] === 'individual' ? 'Individual' : 'Company';
+                    $order->agent_information_details = json_encode($data['agent_information']);
+                } else {
+                    // Legacy format
+                    $order->register_agent_type = isset($data['agentInfo']) ? $data['agentInfo'] : '';
+                    if ($order->register_agent_type == 'own registered agent') {
+                        $order->register_agent_infos = isset($data['agentInfoTwo']) ? $data['agentInfoTwo'] : '';
+                        $order->agent_information_details = isset($data['step_5_agent_information']) ? json_encode($data['step_5_agent_information']) : null;
+                    }
                 }
 
 
@@ -143,38 +163,76 @@ class StoreDataService
                 $company->save();
 
                 if ($order->register_agent_type == 'own registered agent') {
-                    if ($order->register_agent_infos == "Individual") {
-                        $infoData = $data['step_5_agent_information'];
-
+                    // Check if agent_information is provided (new format from FourthFunnel)
+                    if (isset($data['agent_information'])) {
+                        $agentInfo = $data['agent_information'];
+                        
                         $regInfo = new RegisterAgentInformation;
                         $regInfo->company_id = $company->id;
                         $regInfo->order_id = $order->id;
-                        $regInfo->first_name = $infoData['ind_first_name'];
-                        $regInfo->last_name = $infoData['ind_last_name'];
-                        $regInfo->street_address = $infoData['ind_street_address'];
-                        $regInfo->address_cont = $infoData['ind_address_cont'];
-                        $regInfo->city = $infoData['ind_city'];
-                        $regInfo->state = $infoData['ind_state'];
-                        $regInfo->country = $infoData['ind_country'];
-                        $regInfo->zip_code = $infoData['ind_zip_code'];
+                        $regInfo->user_id = $user->id;
+                        $regInfo->agent_type = $agentInfo['agent_type'] ?? null; // 'individual' or 'company'
+                        $regInfo->country = $agentInfo['country'] ?? null;
+                        $regInfo->city = $agentInfo['city'] ?? null;
+                        $regInfo->state = $agentInfo['state'] ?? null;
+                        $regInfo->zip_code = $agentInfo['zip_code'] ?? null;
+                        $regInfo->street_address = $agentInfo['street_address'] ?? null;
+                        
+                        // For individual: use name as first_name, last_name can be empty or split
+                        // For company: use name as company_name
+                        if (($agentInfo['agent_type'] ?? '') === 'individual') {
+                            $nameParts = explode(' ', $agentInfo['name'] ?? '', 2);
+                            $regInfo->first_name = $nameParts[0] ?? null;
+                            $regInfo->last_name = $nameParts[1] ?? null;
+                            $regInfo->company_name = null;
+                        } else {
+                            $regInfo->company_name = $agentInfo['name'] ?? null;
+                            $regInfo->first_name = null;
+                            $regInfo->last_name = null;
+                        }
+                        
                         $regInfo->save();
                         $order->update(['register_agent_id' => $regInfo->id]);
+                    } 
+                    // Legacy format support (old format from step_5_agent_information)
+                    elseif (isset($data['step_5_agent_information'])) {
+                        if ($order->register_agent_infos == "Individual") {
+                            $infoData = $data['step_5_agent_information'];
 
-                    }
-                    if ($order->register_agent_infos == "Company") {
-                        $infoData = $data['step_5_agent_information'];
-                        $regInfo = new RegisterAgentInformation;
-                        $regInfo->company_id = $company->id;
-                        $regInfo->order_id = $order->id;
-                        $regInfo->first_name = $infoData['com_company_name'];
-                        $regInfo->street_address = $infoData['com_street_address'];
-                        $regInfo->address_cont = $infoData['com_address_cont'];
-                        $regInfo->city = $infoData['com_city'];
-                        $regInfo->state = $infoData['com_state'];
-                        $regInfo->country = $infoData['com_country'];
-                        $regInfo->zip_code = $infoData['com_zip_code'];
-                        $regInfo->save();
-                        $order->update(['register_agent_id' => $regInfo->id]);
+                            $regInfo = new RegisterAgentInformation;
+                            $regInfo->company_id = $company->id;
+                            $regInfo->order_id = $order->id;
+                            $regInfo->user_id = $user->id;
+                            $regInfo->agent_type = 'individual';
+                            $regInfo->first_name = $infoData['ind_first_name'];
+                            $regInfo->last_name = $infoData['ind_last_name'];
+                            $regInfo->street_address = $infoData['ind_street_address'];
+                            $regInfo->address_cont = $infoData['ind_address_cont'] ?? null;
+                            $regInfo->city = $infoData['ind_city'];
+                            $regInfo->state = $infoData['ind_state'];
+                            $regInfo->country = $infoData['ind_country'];
+                            $regInfo->zip_code = $infoData['ind_zip_code'];
+                            $regInfo->save();
+                            $order->update(['register_agent_id' => $regInfo->id]);
+                        }
+                        if ($order->register_agent_infos == "Company") {
+                            $infoData = $data['step_5_agent_information'];
+                            $regInfo = new RegisterAgentInformation;
+                            $regInfo->company_id = $company->id;
+                            $regInfo->order_id = $order->id;
+                            $regInfo->user_id = $user->id;
+                            $regInfo->agent_type = 'company';
+                            $regInfo->first_name = $infoData['com_company_name'];
+                            $regInfo->company_name = $infoData['com_company_name'];
+                            $regInfo->street_address = $infoData['com_street_address'];
+                            $regInfo->address_cont = $infoData['com_address_cont'] ?? null;
+                            $regInfo->city = $infoData['com_city'];
+                            $regInfo->state = $infoData['com_state'];
+                            $regInfo->country = $infoData['com_country'];
+                            $regInfo->zip_code = $infoData['com_zip_code'];
+                            $regInfo->save();
+                            $order->update(['register_agent_id' => $regInfo->id]);
+                        }
                     }
                 }
 
@@ -227,11 +285,6 @@ class StoreDataService
                 "error" => $e->getMessage(),
             ];
         }
-
-        return [
-            "success" => false,
-            "error" => "Not Execute Anything",
-        ];
     }
 
 

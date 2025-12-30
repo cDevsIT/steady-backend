@@ -144,7 +144,8 @@ class PaymentProcessingService
                         $planPrice,
                         $serviceType,
                         $planName,
-                        $renewalFee
+                        $renewalFee,
+                        $company
                     );
                 }
             }
@@ -162,7 +163,8 @@ class PaymentProcessingService
                         $serviceData['service_fee'] ?? 0,
                         $serviceData['service_type'] ?? 'yearly',
                         $serviceData['plan_name'] ?? null,
-                        $serviceData['renewal_fee'] ?? null
+                        $serviceData['renewal_fee'] ?? null,
+                        $company
                     );
                 }
             } else {
@@ -240,7 +242,8 @@ class PaymentProcessingService
         float $serviceFee,
         string $serviceType,
         ?string $planName = null,
-        ?float $renewalFee = null
+        ?float $renewalFee = null,
+        ?Company $company = null
     ): ?Subscription {
         if (!$serviceId) {
             return null;
@@ -262,9 +265,10 @@ class PaymentProcessingService
                 $renewalFee = $service ? $service->renewal_fee : 0;
             }
             
-            // For one-time services (like EIN service_id = 4, Operating Agreement service_id = 7), force renewal_fee to 0
+            // For one-time services (like EIN service_id = 4, Operating Agreement service_id = 7), force renewal_fee to 0 and set service_type
             if ($serviceId === 4 || $serviceId === 7) {
                 $renewalFee = 0;
+                $serviceType = 'one_time'; // Ensure one-time services use the correct service_type
             }
 
             // If service_type is not provided, try to map from plan_name
@@ -272,10 +276,16 @@ class PaymentProcessingService
                 $serviceType = self::mapPlanNameToServiceType($planName);
                 $renewalDate = self::calculateRenewalDate($serviceType, $orderDate, $serviceId);
             }
+            
+            // If service_type is 'one_time', ensure renewal_date is null
+            if ($serviceType === 'one_time') {
+                $renewalDate = null;
+            }
 
             $subscription = new Subscription();
             $subscription->service_id = $serviceId;
             $subscription->order_id = $order->id;
+            $subscription->company_id = $company ? $company->id : $order->company_id;
             $subscription->user_id = $user->id;
             $subscription->transition_id = $transition->id;
             $subscription->order_date = $orderDate;
@@ -373,7 +383,7 @@ class PaymentProcessingService
     private static function calculateRenewalDate(string $serviceType, Carbon $orderDate, ?int $serviceId = null): ?Carbon
     {
         // One-time services don't have renewal_date (e.g., EIN service_id = 4, Operating Agreement service_id = 7)
-        if ($serviceId === 4 || $serviceId === 7) {
+        if ($serviceId === 4 || $serviceId === 7 || $serviceType === 'one_time') {
             return null;
         }
         

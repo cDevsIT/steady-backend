@@ -16,8 +16,6 @@ class DataTransformationService
      */
     public static function transformNextJsToLaravel(array $nextJsData): array
     {
-        Log::info('Transforming Next.js data to Laravel format:', $nextJsData);
-        
         $laravelData = [];
         
         // Step 1: Company Name
@@ -29,6 +27,7 @@ class DataTransformationService
             'last_name' => $nextJsData['userInfo']['last_name'] ?? '',
             'email' => $nextJsData['userInfo']['email'] ?? '',
             'phone_number' => $nextJsData['userInfo']['phone_number'] ?? '',
+            'secondary_phone' => $nextJsData['userInfo']['secondary_phone'] ?? null,
         ];
         
         // Check if user is authenticated (for existing users)
@@ -55,9 +54,19 @@ class DataTransformationService
             'renewal_fee' => $nextJsData['plan']['renewal_fee'] ?? $nextJsData['plan']['plan_price'] ?? 0,
         ];
         
-        // Set free_plan_details if it exists, otherwise set to empty array to avoid undefined key errors
+        // Set free_plan_details if it exists, otherwise try to extract from top-level fields (fallback)
         if (isset($nextJsData['plan']['free_plan_details']) && !empty($nextJsData['plan']['free_plan_details'])) {
             $laravelData['s4_free_plan_details'] = $nextJsData['plan']['free_plan_details'];
+        } elseif (isset($nextJsData['plan']['plan_price']) && $nextJsData['plan']['plan_price'] == 0 && 
+                   isset($nextJsData['streetAddress']) && isset($nextJsData['city']) && isset($nextJsData['state']) && isset($nextJsData['zipCode'])) {
+            // Fallback: Extract from top-level fields if plan is Free and address fields exist
+            $laravelData['s4_free_plan_details'] = [
+                'street_address' => $nextJsData['streetAddress'] ?? '',
+                'step4_city' => $nextJsData['city'] ?? '',
+                'step4_state' => $nextJsData['state'] ?? '',
+                'step4_zip_code' => $nextJsData['zipCode'] ?? '',
+                'step4_country' => $nextJsData['country'] ?? 'USA',
+            ];
         } else {
             $laravelData['s4_free_plan_details'] = [];
         }
@@ -78,7 +87,7 @@ class DataTransformationService
                 'service_id' => $nextJsData['einService']['service_id'] ?? 4,
                 'service_fee' => $nextJsData['einService']['service_fee'] ?? 0,
                 'renewal_fee' => 0,
-                'service_type' => $nextJsData['einService']['service_type'] ?? 'yearly',
+                'service_type' => $nextJsData['einService']['service_type'] ?? 'one_time',
             ];
         }
         
@@ -88,12 +97,15 @@ class DataTransformationService
                 'service_id' => $nextJsData['operatingAgreementService']['service_id'] ?? 7,
                 'service_fee' => $nextJsData['operatingAgreementService']['service_fee'] ?? 0,
                 'renewal_fee' => 0,
-                'service_type' => $nextJsData['operatingAgreementService']['service_type'] ?? 'yearly',
+                'service_type' => $nextJsData['operatingAgreementService']['service_type'] ?? 'one_time',
             ];
         }
         
         // Step 5: EIN Amount
         $laravelData['s5_en_amount'] = $nextJsData['en_amount'] ?? 0;
+        
+        // Step 5: SSN (Social Security Number) for express EIN
+        $laravelData['s5_ssn'] = $nextJsData['ssn'] ?? null;
         
         // Step 6: Agreement Amount
         $laravelData['s6_agreement_amount'] = $nextJsData['agreement_amount'] ?? 0;
@@ -112,7 +124,12 @@ class DataTransformationService
         // Agent info fields that StoreDataService expects
         $laravelData['agentInfo'] = $nextJsData['agentInfo'] ?? '';
         $laravelData['agentInfoTwo'] = $nextJsData['agentInfoTwo'] ?? '';
-        $laravelData['step_5_agent_information'] = $nextJsData['agent_information'] ?? [];
+        $laravelData['step_5_agent_information'] = $nextJsData['step_5_agent_information'] ?? [];
+        
+        // New format: agent_information from FourthFunnel (when user selects "own registered agent")
+        if (isset($nextJsData['agent_information'])) {
+            $laravelData['agent_information'] = $nextJsData['agent_information'];
+        }
         
         // Step 9: Multi-member info (owners)
         if (isset($nextJsData['businessDetails']['multi_member_info'])) {
@@ -133,8 +150,6 @@ class DataTransformationService
                 ]
             ];
         }
-        
-        Log::info('Transformed Laravel data:', $laravelData);
         
         return $laravelData;
     }
