@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\TransitionsController as ApiTransitionsController;
 use App\Http\Controllers\Api\OwnerDocumentsController;
 use App\Http\Controllers\Api\WalletController;
 use App\Http\Controllers\Api\QuickActionsController;
+use App\Http\Controllers\Api\ServicesController;
 use App\Http\Controllers\ContactController;
 
 /*
@@ -73,6 +74,9 @@ Route::prefix('blogs')->group(function () {
 
 // Company Formation routes
 Route::post('/company-formation/store', [CompanyFormationController::class, 'store']); // No auth required - user created during submission
+
+// Public services list (direct/both purchase types)
+Route::get('/services', [ServicesController::class, 'index']);
 
 // Payment routes
 Route::post('/payments/stripe/create-session', [StripeController::class, 'createCheckoutSession']);
